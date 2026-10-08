@@ -1,0 +1,1233 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>ממיר הזמנות וטבלת סיכום</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=Assistant:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working column — upload slots, actions, summary strip, day tabs, then the day's table */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --fg:#17211f; --muted:#5b6865; --line:#d8dfdc;
+  --accent:#0f6b5c; --accent-soft:#e1efeb; --on-accent:#ffffff;
+  --warn:#8a5200; --warn-soft:#fbf0dc; --bad:#a3302a; --bad-soft:#f8e3e1;
+  --green-row:#d6efc4; --yellow-row:#fff2cc;
+  --f-display:"Rubik","Assistant",system-ui,sans-serif;
+  --f-body:"Assistant",system-ui,"Segoe UI",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1a2220; --fg:#e6ecea; --muted:#9aa8a4; --line:#2c3734;
+  --accent:#4fbfa8; --accent-soft:#1d332e; --on-accent:#0c1412;
+  --warn:#e3a94b; --warn-soft:#33281a; --bad:#ec8a83; --bad-soft:#3a201e;
+  --green-row:#24402a; --yellow-row:#3a3218; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1a2220; --fg:#e6ecea; --muted:#9aa8a4; --line:#2c3734;
+  --accent:#4fbfa8; --accent-soft:#1d332e; --on-accent:#0c1412;
+  --warn:#e3a94b; --warn-soft:#33281a; --bad:#ec8a83; --bad-soft:#3a201e;
+  --green-row:#24402a; --yellow-row:#3a3218; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:flex;flex-direction:column;gap:20px}
+header h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.slot{position:relative;background:var(--surface);border:1.5px dashed var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s,background .15s;min-width:0}
+.slot:hover,.slot.drag{border-color:var(--accent)}
+.slot:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.slot.ok{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.slot input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.slot .tag{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.04em;color:var(--accent);font-weight:500}
+.slot .name{font-family:var(--f-display);font-weight:500;font-size:1.1rem}
+.slot .hint{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
+.slot.ok .hint{color:var(--fg)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;font-weight:700;border-radius:8px;padding:10px 18px;cursor:pointer;border:1.5px solid var(--accent)}
+button.primary{background:var(--accent);color:var(--on-accent)}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.status{color:var(--muted);font-size:.95rem}
+.stats{display:flex;flex-wrap:wrap;gap:8px 26px;padding-block:12px;border-block:1px solid var(--line)}
+.stat{display:flex;gap:6px;align-items:baseline}
+.stat b{font-family:var(--f-mono);font-size:1.2rem;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.92rem}
+.stat.alert b{color:var(--warn)}
+.note{border-radius:8px;padding:10px 14px;font-size:.95rem;overflow-wrap:anywhere}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.bad{background:var(--bad-soft);color:var(--bad)}
+.note.info{background:var(--accent-soft);color:var(--fg)}
+.note code{font-family:var(--f-mono);font-size:.86rem}
+.note details{margin-top:4px}
+.note summary{cursor:pointer;font-weight:600}
+.note ul{margin:6px 0 0;padding-inline-start:18px}
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.day{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 8px 6px 14px;cursor:pointer;font-weight:600}
+.day[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.day input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.day small{font-family:var(--f-mono);color:var(--muted);font-weight:400}
+.sumgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px}
+@media (max-width:760px){.sumgrid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0;overflow-x:auto}
+.panel h3{margin:0 0 6px;font-family:var(--f-display);font-weight:500;font-size:1rem}
+.mini{border-collapse:collapse;width:100%;font-size:.9rem}
+.mini td,.mini th{padding:4px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.mini th{color:var(--muted);font-weight:600;font-size:.82rem}
+.mini td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:left}
+.mini tr.tot td{font-weight:700;border-bottom:0}
+.mini tr.zero td{color:var(--muted)}
+.tablebox{overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;max-height:65vh}
+table.main{border-collapse:collapse;width:100%;font-size:.9rem}
+.main th,.main td{padding:6px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+.main th{position:sticky;top:0;background:var(--surface);font-weight:700;color:var(--muted);font-size:.8rem;letter-spacing:.02em;z-index:1}
+.main td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:center}
+.main td.wrap{white-space:normal;min-width:160px;max-width:260px}
+.main tr.review td{background:var(--yellow-row)}
+.main td.green{background:var(--green-row);font-weight:600}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.8rem;font-weight:600;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.pill.cold{background:transparent}
+.empty{padding:28px;color:var(--muted);text-align:center}
+.rules{color:var(--muted);font-size:.9rem;margin:0;padding-inline-start:18px;max-width:90ch}
+.rules li{margin-block:3px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:.88rem;align-items:center}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-inline-end:5px;border:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.sheets{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.sh{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.sh i{flex:none;width:12px;height:34px;border-radius:4px}
+.sh div{min-width:0}
+.sh b{display:block;font-family:var(--f-display);font-weight:500;overflow-wrap:anywhere}
+.sh span{color:var(--muted);font-size:.88rem}
+.sh.empty b{color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:4px;max-width:640px}
+.field label{font-weight:600}
+.field input{font:inherit;padding:8px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.field small{color:var(--muted)}
+table.wa{border-collapse:collapse;width:100%;font-size:.92rem}
+.wa th,.wa td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);vertical-align:middle}
+.wa th{color:var(--muted);font-weight:600;font-size:.82rem;position:sticky;top:0;background:var(--surface)}
+.wa tr.sent td{background:var(--green-row)}
+.wa a.send{display:inline-block;background:#7d8583;color:#fff;font-weight:700;border-radius:8px;padding:6px 12px;text-decoration:none;white-space:nowrap}
+.wa tr.sent a.send{background:#1e8e3e}
+.wa a.send:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.wa .when{color:var(--muted);font-size:.82rem;white-space:nowrap}
+.wa input{width:18px;height:18px;accent-color:#1e8e3e}
+.wa-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px 0 0}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="wrap" dir="rtl">
+  <header>
+    <h1>ממיר הזמנות יומי וטבלת סיכום</h1>
+    <p>מעלים את ReportView ואת MultiReportView ומקבלים שני קבצים: הקובץ הסופי של חמגשיות ותפזורת (גיליון לכל תאריך אספקה, עם הסיכומון והנוסחאות של המטבח), וטבלת הסיכום (גיליון לכל סוג הזמנה בצבע קבוע, מחולק לפי תאריכים).</p>
+  </header>
+
+  <section class="slots">
+    <label class="slot" id="slot-report">
+      <input type="file" id="in-report" accept=".xls,.xlsx,.xlsb,.html,.htm" multiple>
+      <span class="tag">1 · רשימת פק"אות</span>
+      <span class="name">ReportView</span>
+      <span class="hint" id="hint-report">איש קשר, טלפון, כתובת לאספקה ותאריך (.xls)</span>
+    </label>
+    <label class="slot" id="slot-multi">
+      <input type="file" id="in-multi" accept=".xlsb,.xlsx,.xls,.html,.htm" multiple>
+      <span class="tag">2 · דאטה מורחב</span>
+      <span class="name">MultiReportView</span>
+      <span class="hint" id="hint-multi">הפריטים והכמויות של כל פק"א (.xlsb)</span>
+    </label>
+  </section>
+
+  <div class="field">
+    <label for="link">קישור למילוי באתר (נכנס להודעת הוואטסאפ בטבלת הסיכום)</label>
+    <input type="url" id="link" dir="ltr" placeholder="https://">
+    <small>הקישור נכנס להודעה בזמן ההורדה, אז מדביקים אותו כאן לפני שמורידים. הוא נשמר לפעם הבאה.</small>
+  </div>
+
+  <div class="bar">
+    <button class="primary" id="btn-both" disabled>הורדת שני הקבצים</button>
+    <button class="ghost" id="btn-dl" disabled>רק חמגשיות ותפזורת</button>
+    <button class="ghost" id="btn-sum" disabled>רק טבלת סיכום</button>
+    <button class="ghost" id="btn-reset">ניקוי</button>
+    <span class="status" id="status" role="status"></span>
+  </div>
+
+  <div id="result" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div id="sum-box" hidden style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="sec">טבלת סיכום</h2>
+      <div class="sheets" id="sheets"></div>
+      <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירוע צבא עם הפעלה</h2><span class="status" id="wa-count"></span></div>
+      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
+    </div>
+    <h2 class="sec">חמגשיות ותפזורת</h2>
+    <div class="stats" id="stats"></div>
+    <div id="notes" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div>
+      <div class="days" id="days" role="tablist" aria-label="ימי אספקה"></div>
+    </div>
+    <div class="sumgrid">
+      <div class="panel"><h3>פק"אות לפי מוצר</h3><table class="mini" id="cats"></table></div>
+      <div class="panel"><h3>מנות לפי סוג</h3><table class="mini" id="sum"></table></div>
+    </div>
+    <div class="legend"><span><i class="sw" style="background:var(--green-row)"></i>אלרגניים (חמגשית טבעונית/צמחונית לל"ג)</span><span><i class="sw" style="background:var(--yellow-row)"></i>לבדיקה ידנית</span></div>
+  </div>
+
+  <div class="tablebox">
+    <table class="main">
+      <thead><tr><th>פק"א</th><th>שם</th><th>טלפון</th><th>איש קשר נוסף</th><th>טלפון 2</th><th>כתובת</th><th>סוג מנה</th><th>רגילות</th><th>טבעוני</th><th>צליאק</th><th>סה"כ</th><th>שעה</th><th>בוקר/ערב</th><th>הערות למנות</th><th>הערות מהכתובת</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="15" class="empty">הטבלה תופיע כאן אחרי העלאת הקבצים</td></tr></tbody>
+    </table>
+  </div>
+
+  <ul class="rules">
+    <li><b>טבלת סיכום · אירוע צבא עם הפעלה:</b> פק"אות עם דוכן או אירוע במזנון/כיבוד עשיר. כל דוכן בשורה משלו: הכמות בעמודת כמות עמדות והשם בעמודת עמדות, ו"תוספת מנה לדוכן" נכנסת לתוספת לעמדות. תפעול תמיד ריק. כפתור הוואטסאפ שולח ללקוח את מספר הפק"א, התאריך, הכתובת והקישור.</li>
+    <li><b>טבלת סיכום · אירועים ללא הפעלה:</b> אירוע או כיבוד "בהפעלת היחידה". תוספת מנה עיקרית נכנסת לתוספת מנות, לל"ג לצליאק, וסה"כ הוא הסכום של שלושתם.</li>
+    <li><b>טבלת סיכום · כריכים עזה:</b> בשרי במנות רגילות, טבעוני בטבעוני, חמגשיות לל"ג באותה פק"א בצליאק. כשבכתובת כתוב סוג וכמות ("50 חלה שניצל", "50 פרנה פרגית") נפתחת שורה לכל סוג.</li>
+    <li><b>טבלת סיכום · חלקי מנה:</b> פק"א שיש בה ארוחה מוכנה בתפזורת לא נכנסת לגיליון, היא בקובץ החמגשיות והתפזורת. המנה העיקרית במנות, וירקנית, פחמימה וסלט בק"ג (0.09, 0.18 ו-0.18 ק"ג למנה). ארוזית בוקר, סביח, מרק, גחנון וחמין נכנסים לגיליונות שלהם לפי שם הפריט. חלקי ארוחה חמין (בשרי או טבעוני) נכנסים לגיליון חמין. חמין לל"ג או אלרגני נספר בעמודת צליאק, וסה"כ הוא חמין + טבעוני + צליאק.</li>
+    <li>לכל תאריך אספקה נוצר גיליון משלו, ואחריו גיליון "נוספות" של אותו תאריך. נכנסים כל התאריכים שמופיעים בשני הקבצים. אפשר להעלות גם רק MultiReportView, כי יש בו את פרטי הפק"א.</li>
+    <li>נכנסות פק"אות בסטטוס "אושרה לביצוע" ופק"אות בסטטוס "חדשה". בפק"א חדשה כתוב בהערות "פק"א חדשה (טרם אושרה)". כשיש לפק"א גם מקורית וגם עדכון, נלקח העדכון.</li>
+    <li>תפזורת (ארוחה מוכנה בתפזורת בהפעלת יחידה): אם בכתובת כתוב מצונן, סוג המנה הוא "תפזורת- קר מצונן". מספר הטבעוניים נלקח מהכתובת, נכנס לטיבעוני ויורד מהמנות הרגילות.</li>
+    <li>חמגשית כולל נלווים → "חמגשית+נלווים". חמגשית ללא נלווים → "חמגשית ללא נלווים". בשרי נספר ברגילות, טבעוני וצמחוני בטיבעוני, לל"ג בצליאק.</li>
+    <li>חמגשית טבעונית לל"ג וחמגשית צמחונית לל"ג נספרות בצליאק, ובהערות למנות נכתב "X אלרגניים טבעוני" או "X אלרגניים צמחוני" בצבע ירוק.</li>
+    <li>מהכתובת לאספקה יוצאים: כתובת נקייה, איש קשר נוסף וטלפון 2, והערות מיוחדות. התאריך והשעה מופרדים לשתי עמודות. משעה 16:00 השורה מסומנת "ערב".</li>
+    <li>חלקי ארוחה (מנה בשרית / מנה טבעוני) בפק"א של חמגשיות או תפזורת → שורת "תפזורת-ללא נלווים". פחמימה, ירקנית וסלטים לא נספרים כמנות.</li>
+    <li>בפק"א שיש בה תפזורת, "חלקי ארוחה מנה בשרית" נרשם כשורה נפרדת בסוג מנה "תוספת מנת בשר".</li>
+    <li>פריט שלא זוהה לו סוג מנה: בעמודת סוג מנה נכתב תיאור הפריט הארוך, והשורה מסומנת בצהוב.</li>
+    <li>חמגשית בשרי לל"ג מצטרפת לשורה הראשית של הפק"א (תפזורת אם יש), כמו בקובץ הידני.</li>
+    <li>גיליון התאריך כולל רק פק"אות מקטגוריית "חמגשיות תפזורת". כל השאר (אירועים, כיבוד, חלקי מנות, כריכים, גחנון, דוכנים) נרשם בגיליון "הזמנות נוספות", והסיכומון סופר את כל הפק"אות של היום לפי קטגוריה.</li>
+  </ul>
+</div>
+<script>
+/* ===== core: parsing + rules (pure, no DOM) ===== */
+const clean=v=>v==null?'':String(v).replace(/[\u0000-\u001f]/g,' ').replace(/[\u200e\u200f\u200b\ufeff]/g,'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim();
+const norm=v=>clean(v).replace(/[\s.\-_:"'`׳״“”’]/g,'').replace(/יי/g,'');
+const K={po:norm('מס. פקייא'),st:norm('סטטוס בדיביסי'),orig:norm('פקייא: מקורית או עידכון/ביטול'),line:norm('מס. שורה'),
+  contact:norm('איש קשר'),phone:norm('טלפון איש קשר'),addr:norm('כתובת לאספקה'),when:norm('תאריך ושעות אספקה מועדפים'),qty:norm('כמות')};
+const ACTIVE='אושרה לביצוע';
+const isActive=st=>/אושרה לביצוע|^חדש/.test(clean(st));
+const fixPhone=v=>{if(v==null)return '';if(typeof v==='number'){const t=String(Math.round(v));return /^5\d{8}$/.test(t)?'0'+t:t}return clean(v)};
+const asId=v=>{if(typeof v==='number')return String(Math.round(v));return clean(v).replace(/\.0+$/,'')};
+const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+/* ---- file kind ---- */
+function kind(rows){
+  const flat=rows.slice(0,60).flat().map(norm);
+  if(flat.includes(K.line))return 'multi';
+  if(flat.includes(K.po)&&flat.includes(K.addr))return 'report';
+  return null;
+}
+
+/* ---- REPORT: one header row, one row per PO version ---- */
+function parseReport(rows){
+  const hi=rows.findIndex(r=>r&&r.map(norm).includes(K.po));
+  if(hi<0)throw new Error('בקובץ REPORT לא נמצאה עמודה "מס. פקייא"');
+  const h=rows[hi].map(norm), col=k=>h.indexOf(k);
+  const c={po:col(K.po),st:col(K.st),orig:col(K.orig),contact:col(K.contact),phone:col(K.phone),addr:col(K.addr),when:col(K.when)};
+  const out=[];
+  for(const r of rows.slice(hi+1)){
+    if(!r||r[c.po]==null||!asId(r[c.po]))continue;
+    out.push({po:asId(r[c.po]),status:clean(r[c.st]),version:clean(r[c.orig]),contact:clean(r[c.contact]),phone:clean(r[c.phone]),addrRaw:r[c.addr]==null?'':String(r[c.addr]),when:clean(r[c.when])});
+  }
+  return out;
+}
+
+/* common misspellings in item descriptions ("איורע" / "ארוע" = אירוע) */
+const fixTypos=d=>d.replace(/איורע|(?<![א-ת])ארוע/g,'אירוע');
+/* ---- MULTI: PO header → PO values → items header ("מס. שורה") → items ---- */
+function parseMulti(rows){
+  const items=[]; let po=null, poHead=null, mode=null, ih=null;
+  for(const r of rows){
+    const cells=(r||[]).map(clean), n=cells.map(norm);
+    if(!cells.some(Boolean)){if(mode==='items')mode=null;continue}
+    if(n.includes(K.po)&&!n.includes(K.line)){poHead=n;mode='po';continue}
+    if(n.includes(K.line)){
+      const find=(...tests)=>{for(const t of tests){const i=n.findIndex(t);if(i>=0)return i}return -1};
+      const T=x=>/תי?אור/.test(x);
+      ih={desc:find(x=>T(x)&&x.includes('ארוך'),x=>/תי?אורהפריט|תי?אורפריט/.test(x),T),short:find(x=>T(x)&&!x.includes('ארוך')),line:find(x=>x.includes('פעילה')||x.includes('בוטלה')),
+          qty:find(x=>x===K.qty,x=>x.startsWith(K.qty)),sku:find(x=>x.includes('מקט'))};
+      mode='items';continue;
+    }
+    if(mode==='po'){
+      const i=poHead.indexOf(K.po); po=asId(r[i]);
+      const st=poHead.indexOf(K.st), ve=poHead.indexOf(K.orig);
+      const wi=poHead.indexOf(K.when); let dk='';
+      if(wi>=0){const v=r[wi];if(typeof v==='number'){const d=new Date(Date.UTC(1899,11,30)+Math.floor(v)*864e5);dk=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')}else dk=splitWhen(v).key}
+      const col=k=>{const j=poHead.indexOf(k);return j>=0?r[j]:null};
+      let when=col(K.when);
+      if(typeof when==='number'){const d=new Date(Date.UTC(1899,11,30)+Math.round(when*1440)*6e4);const p=n=>String(n).padStart(2,'0');when=p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())}
+      const hdr={po,status:st>=0?clean(r[st]):'',version:ve>=0?clean(r[ve]):'',contact:clean(col(K.contact)),phone:fixPhone(col(K.phone)),addrRaw:col(K.addr)==null?'':String(col(K.addr)),when:clean(when),fromMulti:true};
+      po={po,status:hdr.status,version:hdr.version,dateKey:dk,hdr};
+      mode=null;continue;
+    }
+    if(mode==='items'&&po&&ih){
+      const q=r[ih.qty]; const qty=typeof q==='number'?q:Number(clean(q).replace(/,/g,''));
+      const ls=ih.line>=0?clean(r[ih.line]):'';
+      if(/בוטל/.test(ls)||ls==='2'||ls==='0'){(po.cancelled=po.cancelled||[]).push(clean(r[ih.desc]));continue}
+      items.push({po:po.po,status:po.status,version:po.version,dateKey:po.dateKey,hdr:po.hdr,desc:fixTypos(clean(r[ih.desc])||(ih.short>=0?clean(r[ih.short]):'')),qty:isFinite(qty)?qty:0,sku:ih.sku>=0?clean(r[ih.sku]):''});
+    }
+  }
+  return items;
+}
+
+/* ---- address text → clean address, vegan, cold, extra contact, notes ---- */
+const PHONE=/0\d{1,2}[\s-]?\d{3}[\s-]?\d{4}|0\d{8,9}/;
+const INFO=/טבעונ|צמחונ|מבקש|מצונ|נא לדייק|נא ליצור|איש קשר|נדרש|חלת שניצל|חלה שניצל|כריך|וופל|שיגיע|אירוע|בשרי|פחמימה|גבינה|פיצה|!!/;
+const stripQ=t=>t.replace(/^[\s"'״*]+|[\s"'״*]+$/g,'');
+function parseAddress(raw){
+  const text=String(raw==null?'':raw).replace(/\r/g,'').replace(/[‎‏​﻿]/g,'').replace(/ /g,' ').replace(/[״”“]/g,'"');
+  const flat=clean(text);
+  const cold=/מצונ/.test(flat);
+  const noPhones=flat.replace(new RegExp(PHONE.source,'g'),' # ');
+  let vegan=0,vm;const re1=/(?<![\d#])(\d{1,3})\s*(?:מנות\s*)?(?:טבעונ|צמחונ)/g, re2=/(?:טבעוני|צמחוני)\s*[-:]?\s*(\d{1,3})(?!\d)/g;
+  while((vm=re1.exec(noPhones)))vegan+=Number(vm[1]);
+  if(!vegan)while((vm=re2.exec(noPhones)))vegan+=Number(vm[1]);
+  let t2=text;
+  if(!/\n/.test(t2.trim()))t2=t2.replace(/^[\s!*]*מצונ[^\s!*]*[\s!*]*/,'').replace(/\s+(?=(?:\d{1,3}\s*(?:מנות\s*)?(?:טבעונ|צמחונ)|(?:טבעוני|צמחוני)\s*\d|מבקש|נא לדייק|נא ליצור|"?\s*(?:שם\s*)?איש קשר|נדרש|\(\s*\d))/g,'\n').replace(/שם\n(?=איש קשר)/g,'שם ').replace(/נדרש\n/g,'נדרש ');
+  const lines=t2.split('\n').map(l=>stripQ(clean(l))).filter(l=>l&&!/^[!*\s]*מצונ\S*[!*\s]*$/.test(l));
+  const addr=[], notes=[]; let extraName='', extraPhone='', infoSeen=false, lastPlain=null;
+  const setContact=(n,p)=>{n=stripQ(clean(n).replace(/(?:שם\s*)?איש קשר נוסף|נא ליצור קשר עם|לפני|נדרש|^שם\s+|\d{1,3}\s*(?:מנות\s*)?(?:טבעוני|צמחוני)|(?:טבעוני|צמחוני)\s*\d{1,3}/g,' ')).replace(/^[\s:,\-–]+|[\s:,\-–]+$/g,'');
+    if(!extraPhone){extraPhone=clean(p);extraName=n}else notes.push((n?n+' ':'')+clean(p))};
+  const digits=x=>String(x||'').replace(/\D/g,'');
+  lines.forEach((l0,i)=>{
+    let l=l0.replace(/^(?:מיקום|כתובת)\s*:\s*/,'');
+    const pm=l.match(PHONE);
+    if(pm){
+      const before=l.slice(0,pm.index), after=stripQ(l.slice(pm.index+pm[0].length));
+      if(i===0&&!INFO.test(before)){                 // phone on the address line: "בסיס ברקאי אוראל 050…"
+        const b=before.trim(); const ci=b.lastIndexOf(',');
+        const name=ci>=0?b.slice(ci+1):b.split(' ').pop(); const rest=ci>=0?b.slice(0,ci):b.split(' ').slice(0,-1).join(' ');
+        addr.push(rest);setContact(name,pm[0]);
+      }else{
+        let name=before;
+        if(!stripQ(clean(name).replace(/(?:שם\s*)?איש קשר נוסף|[:\-–]/g,'')).trim()){
+          if(after&&!INFO.test(after))name=after;
+          else if(lastPlain==='notes'&&notes.length)name=notes.pop();
+          else if(lastPlain==='addr'&&addr.length>1)name=addr.pop();
+        }
+        setContact(name,pm[0]);
+      }
+      infoSeen=true;lastPlain=null;return;
+    }
+    if(INFO.test(l)){
+      if(i===0){const x=l.search(INFO);addr.push(l.slice(0,x));const rest=clean(l.slice(x));if(rest&&!/^מצונ\S*$/.test(rest))notes.push(rest)}
+      else notes.push(l);
+      infoSeen=true;lastPlain=null;return;
+    }
+    if(!infoSeen){addr.push(l);lastPlain='addr'}else{notes.push(l);lastPlain='notes'}
+  });
+  const address=clean(addr.join(' ')).replace(/[\s,.:\-–+!*]+$/,'').replace(/^[\s,.:\-–+!*]+/,'');
+  const ROUTINE=/^(?:\(?\s*\d{1,3}\s*(?:מנות\s*)?(?:טבעוני|צמחוני)\s*\)?|(?:טבעוני|צמחוני)\s*\d{1,3}|נדרש\s*\d{1,3}\s*(?:טבעוני|צמחוני)|מבקש\s*(?:לקבל את המנות מצוננות|שיגיע מצונן)|(?:שיגיע\s*)?מצונ\S*)$/;
+  const keep=notes.map(n=>clean(n.replace(/[*!]+/g,' '))).filter(n=>n&&!ROUTINE.test(n)&&!ROUTINE.test(n.replace(/\s*מצונ\S*\s*$/,'')));
+  return {address:address||flat,vegan:vegan||null,cold,extraName,extraPhone,notes:keep.join(' | ')};
+}
+
+/* ---- item description → meal type + bucket ---- */
+function classify(desc){
+  const d=clean(desc).replace(/[״”“]/g,'"');
+  const celiac=/לל"?ג|ללא גלוטן|צליאק/.test(d);
+  const vegan=/טבעונ|צמחונ/.test(d);
+  if(/תפזורת/.test(d)&&!/חלקי/.test(d))return {kind:'taf',celiac,vegan};
+  if(/חמגשית/.test(d)){
+    let h=null;
+    if(/לא מחולקת/.test(d))h='חמגשית לא מחולקת +נלווים';
+    else if(/ללא נלווים/.test(d))h='חמגשית ללא נלווים';
+    else if(/נלווים/.test(d))h='חמגשית+נלווים';
+    return {kind:'tray',h,celiac,vegan};
+  }
+  if(/אירוע/.test(d))return {kind:'event',celiac,vegan};
+  return {kind:'other',celiac,vegan};
+}
+
+function splitWhen(s){
+  const m=clean(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(!m)return {key:'ללא תאריך',d:null,hh:null,mm:null};
+  const d=new Date(+m[3],+m[2]-1,+m[1]);
+  return {key:m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'),d,hh:m[4]!=null?+m[4]:null,mm:m[5]!=null?+m[5]:null};
+}
+const sheetName=d=>d?DAYS[d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear():'ללא תאריך';
+
+/* ---- build ---- */
+/* ---- per-row kitchen formulas (same as the 09.10 file) ---- */
+const has=(h,w)=>h.includes(w);
+function kitchen(r){
+  const I=r.I||0,J=r.J||0,h=r.h||'',ev=has(h,'אירוע'),tf=has(h,'תפזורת');
+  return {
+    R:ev?I*0.5/10:'',S:ev?I*0.5/25:'',T:ev?I*0.33/25:'',
+    U:tf?I*0.5/25:(ev?I*0.33/25:''),V:tf?I*0.5/25:(ev?I*0.33/25:''),
+    W:(tf||ev)?J/5:'',X:(tf||ev)?(I+J)*0.5/35:'',Y:(tf||ev)?(I+J)*0.5/35:'',Z:(tf||ev)?(I+J)/70:''};
+}
+const SUM_TYPES=[
+  ['תפזורת',h=>has(h,'תפזורת')&&!has(h,'מצונ')],
+  ['תפזורת- קר מצונן',h=>has(h,'תפזורת')&&has(h,'מצונ')],
+  ['אירוע',h=>has(h,'אירוע')],
+  ['חמגשית+נלווים',h=>has(h,'חמגשית+נלווים')],
+  ['חמגשית ללא נלווים',h=>has(h,'חמגשית ללא נלווים')&&!has(h,'מצונ')],
+  ['חמגשית ללא נלווים- מצונן קר',h=>has(h,'חמגשית ללא נלווים')&&has(h,'מצונ')],
+  ['חמגשית לא מחולקת +נלווים',h=>has(h,'חמגשית לא מחולקת')]];
+// Excel criteria matching the same rules (fixes the double count of J7 in the old file)
+const SUM_CRIT=[
+  ['"*תפזורת*"','"<>*מצונ*"'],['"*תפזורת*מצונ*"'],['"*אירוע*"'],['"*חמגשית+נלווים*"'],
+  ['"*חמגשית ללא נלווים*"','"<>*מצונ*"'],['"*חמגשית ללא נלווים*מצונ*"'],['"*חמגשית לא מחולקת*"']];
+function summary(rows){
+  return SUM_TYPES.map(([name,f])=>{const rs=rows.filter(r=>f(r.h||''));return {name,I:rs.reduce((s,r)=>s+(r.I||0),0),J:rs.reduce((s,r)=>s+(r.J||0),0),K:rs.reduce((s,r)=>s+(r.K||0),0)}});
+}
+/* ---- PO category (the "סיכומון" product counts). One category per PO, first match wins ---- */
+const CATS=[
+  ['כריך שניצל',ds=>ds.some(d=>/לחמניה|כריך|שניצל/.test(d))],
+  ['גחנון',ds=>ds.some(d=>/גחנון/.test(d))],
+  ['אירוע עם הפעלה',ds=>ds.some(d=>/דוכן|עם הפעלה|כולל הפעלה/.test(d))],
+  ['אירוע ללא הפעלה',ds=>ds.some(d=>/אירוע|כיבוד/.test(d))],
+  ['בורקס',ds=>ds.some(d=>/בורקס|ארוזית/.test(d))],
+  ['גיבור זר',ds=>ds.some(d=>/גיבור/.test(d))],
+  ['חמגשיות תפזורת',ds=>ds.some(d=>/חמגשית/.test(d)||(/תפזורת/.test(d)&&!/חלקי/.test(d)))],
+  ['חלקי מנות',ds=>ds.some(d=>/חלקי/.test(d))]];
+const CAT_ORDER=['חמגשיות תפזורת','חלקי מנות','כריך שניצל','גחנון','אירוע ללא הפעלה','אירוע עם הפעלה','גיבור זר','בורקס'];
+const MAIN_CAT='חמגשיות תפזורת';
+function categoryOf(descs){if(!descs||!descs.length)return null;for(const [n,f] of CATS)if(f(descs))return n;return 'אחר'}
+function catCounts(pos){
+  const m=new Map(CAT_ORDER.map(n=>[n,0]));let other=0;
+  for(const p of pos){if(m.has(p.cat))m.set(p.cat,m.get(p.cat)+1);else if(p.cat)other++}
+  const out=CAT_ORDER.map(n=>({name:n,n:m.get(n)}));if(other)out.push({name:'אחר',n:other});return out;
+}
+// חלקי ארוחה: main dish counts as portions, side components are not counted
+const PART_MAIN=/חלקי ארוחה\s*(?:מנה בשרית|מנה טבעוני|חמין|דג)/;
+
+function build(reportRows,multiItems,opts={}){
+  const eveningFrom=opts.eveningFrom??16;
+  const skipped=[];
+  const byPo=new Map();
+  for(const r of reportRows){
+    if(!isActive(r.status)){skipped.push(r);continue}
+    const prev=byPo.get(r.po);
+    if(!prev||/עדכון/.test(r.version))byPo.set(r.po,r);
+  }
+  const inReport=new Set(reportRows.map(r=>r.po)), fromMulti=[];
+  for(const it of multiItems||[]){
+    if(inReport.has(it.po)||!it.hdr||!isActive(it.hdr.status))continue;
+    const prev=byPo.get(it.po);
+    if(!prev){byPo.set(it.po,it.hdr);fromMulti.push(it.po)}
+    else if(prev.fromMulti&&/עדכון/.test(it.hdr.version))byPo.set(it.po,it.hdr);
+  }
+  const itemsByPo=new Map(), multiDate=new Map();
+  for(const it of multiItems||[]){
+    if(it.dateKey)multiDate.set(it.po,it.dateKey);
+    if(it.status&&!isActive(it.status))continue;
+    if(!itemsByPo.has(it.po))itemsByPo.set(it.po,[]);
+    itemsByPo.get(it.po).push(it);
+  }
+  for(const [po,list] of itemsByPo){
+    if(list.some(i=>/עדכון/.test(i.version))&&list.some(i=>i.version&&!/עדכון/.test(i.version)))
+      itemsByPo.set(po,list.filter(i=>/עדכון/.test(i.version)));
+  }
+  const rows=[], others=[], noItems=[], review=[], pos=[];
+  for(const [po,r] of byPo){
+    const A=parseAddress(r.addrRaw), W=splitWhen(r.when);
+    const same=A.extraPhone&&A.extraPhone.replace(/\D/g,'')===r.phone.replace(/\D/g,'');
+    const its=itemsByPo.get(po)||[];
+    const base={po,contact:r.contact,phone:r.phone,extraName:same?'':A.extraName,extraPhone:same?'':A.extraPhone,address:A.address,addrRaw:r.addrRaw,
+      dateKey:W.key,date:W.d,hh:W.hh,mm:W.mm,ampm:W.hh==null?'':(W.hh>=eveningFrom?'ערב':'בוקר'),notes:[/^חדש/.test(clean(r.status))?'פק"א חדשה (טרם אושרה)':'',A.notes].filter(Boolean).join(' | '),isNew:/^חדש/.test(clean(r.status)),descs:its.map(i=>i.desc)};
+    const cat=multiItems?categoryOf(base.descs):null;
+    pos.push({po,dateKey:W.key,cat});
+    if(!multiItems){rows.push({...base,h:'',I:null,J:null,K:null,P:'',flag:'nodata'});continue}
+    if(!its.length){noItems.push(po);rows.push({...base,h:'',I:null,J:null,K:null,P:'אין פריטים בקובץ MULTI',flag:'review'});continue}
+    if(cat!==MAIN_CAT){others.push({...base,cat,items:its});continue}
+
+    const groups=new Map();
+    const g=h=>{if(!groups.has(h))groups.set(h,{h,I:0,J:0,K:0,allergen:0,allergenV:0,taf:false});return groups.get(h)};
+    const cls=its.map(it=>({it,c:classify(it.desc)}));
+    const tafH=A.cold?'תפזורת- קר מצונן':'תפזורת';
+    const hasTaf=cls.some(x=>x.c.kind==='taf'), hasParts=cls.some(x=>PART_MAIN.test(x.it.desc));
+    const plainTray=cls.find(x=>x.c.kind==='tray'&&x.c.h&&!x.c.celiac);
+    // celiac lines join the PO's main meal row
+    const mainH=hasTaf?tafH:hasParts?'תפזורת-ללא נלווים':plainTray?plainTray.c.h:null;
+    const put=(x,c,q,d)=>{if(c.celiac){x.K+=q;if(/טבעונ/.test(d||''))x.allergen+=q;else if(/צמחונ/.test(d||''))x.allergenV+=q}else if(c.vegan)x.J+=q;else x.I+=q};
+    for(const {it,c} of cls){
+      if(c.kind==='taf'){const x=g(tafH);x.taf=true;put(x,c,it.qty,it.desc)}
+      else if(hasTaf&&/חלקי ארוחה\s*מנה בשרית/.test(it.desc)){const x=g('תוספת מנת בשר');x.I+=it.qty}
+      else if(!hasTaf&&PART_MAIN.test(it.desc)){const x=g('תפזורת-ללא נלווים');put(x,{celiac:c.celiac,vegan:/טבעונ|צמחונ/.test(it.desc)},it.qty)}
+      else if(!hasTaf&&/חלקי/.test(it.desc)){/* side components (פחמימה, ירקנית, סלטים) are part of the same meal */}
+      else if(c.kind==='tray'&&(c.h||mainH)){
+        const h=(c.celiac&&!c.vegan&&mainH)?mainH:(c.h||mainH);
+        const x=g(h);if(h===tafH&&hasTaf)x.taf=true;put(x,c,it.qty,it.desc);
+      }
+      else if(c.kind!=='tray'&&c.celiac&&mainH)put(g(mainH),c,it.qty,it.desc);
+      else{ // meal type not recognised: the long item description becomes the meal type
+        const x=g(clean(it.desc));x.unknown=true;put(x,c,it.qty,it.desc);review.push({po,desc:it.desc});
+      }
+    }
+    // תפזורת: vegan count comes from the address and is taken out of the regular portions
+    for(const x of groups.values())if(x.taf&&A.vegan){x.J+=A.vegan;x.I=Math.max(0,x.I-A.vegan)}
+    for(const x of groups.values())
+      rows.push({...base,h:x.h,I:x.I,J:x.J,K:x.K,P:[x.allergen?x.allergen+' אלרגניים טבעוני':'',x.allergenV?x.allergenV+' אלרגניים צמחוני':''].filter(Boolean).join(', '),allergen:(x.allergen+x.allergenV)>0,flag:x.unknown?'review':''});
+  }
+  const byTime=(a,b)=>(a.dateKey<b.dateKey?-1:a.dateKey>b.dateKey?1:0)||((a.hh??99)*60+(a.mm??0))-((b.hh??99)*60+(b.mm??0))||a.address.localeCompare(b.address,'he')||a.po.localeCompare(b.po);
+  rows.sort(byTime);others.sort(byTime);
+  const dates=new Map();
+  const day=(k,d)=>{if(!dates.has(k))dates.set(k,{key:k,name:sheetName(d),date:d,rows:[],others:[],pos:[]});return dates.get(k)};
+  for(const r of rows)day(r.dateKey,r.date).rows.push(r);
+  for(const o of others)day(o.dateKey,o.date).others.push(o);
+  for(const p of pos){const d=dates.get(p.dateKey);if(d)d.pos.push(p)}
+  const reportDays=new Set(pos.map(p=>p.dateKey));
+  const missingInReport=multiItems?[...itemsByPo.keys()].filter(p=>!byPo.has(p)&&!reportRows.some(r=>r.po===p)&&(!multiDate.has(p)||reportDays.has(multiDate.get(p)))):[];
+  const list=[...dates.values()].sort((a,b)=>a.key<b.key?-1:1);
+  return {dates:list,skipped,noItems,review,missingInReport,fromMulti,activeCount:byPo.size,hasMulti:!!multiItems};
+}
+
+/* ===== xlsx writer (no library: XML + stored zip) ===== */
+const xesc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const colL=n=>{let s='';n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+const excelDate=d=>Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(1899,11,30))/864e5);
+const STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="3"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/><numFmt numFmtId="166" formatCode="0.0"/></numFmts>
+<fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font><font><b/><sz val="13"/><name val="Arial"/></font></fonts>
+<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAD3"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF92D050"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFEDEDED"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="15">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1"/>
+<xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyBorder="1"/>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="1" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="1" fontId="1" fillId="5" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="1" fontId="0" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="1" fontId="0" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+// style ids
+const S={hd:1,tx:2,dt:3,tm:4,green:5,yellow:6,dec:7,title:8,lab:9,num:10,numB:11,numGreen:12,numYellow:13,bold:14};
+const HEAD=['מספר פק"א','פלאפון של הנהג','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת ','סוג מנה ','מנות רגילות','טיבעוני','צליאק','סה"כ כמות מנות','תאריך','שעה ','בוקר / ערב','הערות למנות','קיבולת','מנה ראשונה דג','מנה ראשונה רגיל','עיקרית פרגית','עיקרית עוף','עיקרית בקר','טבעוני','פחמימה 1','פחמימה 2','ירקנית','הערות מהכתובת'];
+const WIDTHS=[13,12,11,13,11,13,26,24,10,8,8,10,11,7,8,20,7,9,9,9,9,9,8,9,9,8,34];
+
+function cellXml(ref,v,st,f){
+  if(f!=null){
+    if(v===''||v==null)return `<c r="${ref}" s="${st}" t="str"><f>${xesc(f)}</f><v></v></c>`;
+    return typeof v==='number'?`<c r="${ref}" s="${st}"><f>${xesc(f)}</f><v>${+v.toFixed(6)}</v></c>`:`<c r="${ref}" s="${st}" t="str"><f>${xesc(f)}</f><v>${xesc(v)}</v></c>`;
+  }
+  if(v===''||v==null)return `<c r="${ref}" s="${st}"/>`;
+  if(typeof v==='number')return `<c r="${ref}" s="${st}"><v>${v}</v></c>`;
+  return `<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+}
+function dateSheetXml(day){
+  const rows=day.rows, first=13, last=Math.max(first,first+rows.length-1), R=`$13:$`;
+  const rng=c=>`$${c}$13:$${c}$${last}`;
+  const X=[]; const row=(n,cells,ht)=>X.push(`<row r="${n}"${ht?` ht="${ht}" customHeight="1"`:''}>${cells.join('')}</row>`);
+  const sum=summary(rows), cats=catCounts(day.pos||[]);
+  row(1,[cellXml('A1','סיכומון',S.title),cellXml('I1','סיכומון',S.title)]);
+  row(2,[cellXml('A2',cats[0].name,S.lab),cellXml('B2',cats[0].n,S.num),cellXml('I2','סוג מנה',S.lab),cellXml('J2','מנות רגילות',S.lab),cellXml('K2','טיבעוני',S.lab),cellXml('L2','צליאק',S.lab)]);
+  for(let i=0;i<7;i++){
+    const n=3+i, t=sum[i], cr=SUM_CRIT[i].map(c=>`${rng('H')}, ${c}`).join(', ');
+    const cells=[];
+    if(i+1<cats.length)cells.push(cellXml('A'+n,cats[i+1].name,S.lab),cellXml('B'+n,cats[i+1].n,S.num));
+    cells.push(cellXml('I'+n,t.name,S.lab),
+      cellXml('J'+n,t.I,S.num,`SUMIFS(${rng('I')}, ${cr})`),cellXml('K'+n,t.J,S.num,`SUMIFS(${rng('J')}, ${cr})`),cellXml('L'+n,t.K,S.num,`SUMIFS(${rng('K')}, ${cr})`));
+    row(n,cells);
+  }
+  const tot=k=>sum.reduce((s,t)=>s+t[k],0);
+  row(10,[cellXml('A10','סה"כ פק"אות',S.lab),cellXml('B10',cats.reduce((s,c)=>s+c.n,0),S.numB,'SUM(B2:B9)'),cellXml('I10','סיכום:',S.lab),
+    cellXml('J10',tot('I'),S.numB,'SUM(J3:J9)'),cellXml('K10',tot('J'),S.numB,'SUM(K3:K9)'),cellXml('L10',tot('K'),S.numB,'SUM(L3:L9)')]);
+  row(12,HEAD.map((h,c)=>cellXml(colL(c)+'12',h,S.hd)),32);
+  rows.forEach((r,i)=>{
+    const n=first+i, k=kitchen(r), flag=r.flag==='review'||r.flag==='other';
+    const tx=flag?S.yellow:S.tx, nm=flag?S.numYellow:S.num;
+    const L=(r.I||0)+(r.J||0)+(r.K||0);
+    const has=w=>`ISNUMBER(SEARCH("${w}", $H${n}))`, tfev=`OR(${has('תפזורת')}, ${has('אירוע')})`;
+    const c=[
+      cellXml('A'+n,/^\d+$/.test(r.po)?Number(r.po):r.po,tx),cellXml('B'+n,'',tx),cellXml('C'+n,r.contact,tx),cellXml('D'+n,r.phone,tx),
+      cellXml('E'+n,r.extraName,tx),cellXml('F'+n,r.extraPhone,tx),cellXml('G'+n,r.address,tx),cellXml('H'+n,r.h,tx),
+      cellXml('I'+n,r.I,nm),cellXml('J'+n,r.J,nm),cellXml('K'+n,r.K,nm),
+      cellXml('L'+n,r.I==null?'':L,nm,`IF(COUNT(I${n}:K${n}),SUM(I${n}:K${n}),"")`),
+      cellXml('M'+n,r.date?excelDate(r.date):'',S.dt),cellXml('N'+n,r.hh!=null?(r.hh*60+r.mm)/1440:'',S.tm),cellXml('O'+n,r.ampm,S.tx),
+      cellXml('P'+n,r.P,r.allergen?S.green:tx),cellXml('Q'+n,1,S.num),
+      cellXml('R'+n,k.R,S.dec,`IF(${has('אירוע')}, $I${n} * 0.5 / 10, "")`),
+      cellXml('S'+n,k.S,S.dec,`IF(${has('אירוע')}, $I${n} * 0.5 / 25, "")`),
+      cellXml('T'+n,k.T,S.dec,`IF(${has('אירוע')}, $I${n} * 0.33 / 25, "")`),
+      cellXml('U'+n,k.U,S.dec,`IF(${has('תפזורת')}, $I${n} * 0.5 / 25, IF(${has('אירוע')}, $I${n} * 0.33 / 25, ""))`),
+      cellXml('V'+n,k.V,S.dec,`IF(${has('תפזורת')}, $I${n} * 0.5 / 25, IF(${has('אירוע')}, $I${n} * 0.33 / 25, ""))`),
+      cellXml('W'+n,k.W,S.dec,`IF(${tfev}, IFERROR(J${n}/5, ""), "")`),
+      cellXml('X'+n,k.X,S.dec,`IF(${tfev}, (SUM($I${n}:$J${n})*0.5)/35, "")`),
+      cellXml('Y'+n,k.Y,S.dec,`IF(${tfev}, (SUM($I${n}:$J${n})*0.5)/35, "")`),
+      cellXml('Z'+n,k.Z,S.dec,`IF(${tfev}, (SUM($I${n}:$J${n})*1)/70, "")`),
+      cellXml('AA'+n,r.notes,S.tx)];
+    row(n,c);
+  });
+  const poMerges=[];
+  for(let i=0;i<rows.length;){let j=i;while(j+1<rows.length&&rows[j+1].po===rows[i].po)j++;if(j>i)poMerges.push(`A${first+i}:A${first+j}`);i=j+1}
+  const cols=WIDTHS.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:AA${last}"/>
+<sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="12" topLeftCell="A13" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${X.join('')}</sheetData>
+<autoFilter ref="A12:AA${last}"/><mergeCells count="${2+poMerges.length}"><mergeCell ref="A1:B1"/><mergeCell ref="I1:L1"/>${poMerges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>
+<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/>
+</worksheet>`;
+}
+function extrasSheetXml(days){
+  const H=['תאריך','מספר פק"א','קטגוריה','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת','שעה','תיאור פריט','כמות','הערות מהכתובת'];
+  const X=[`<row r="1" ht="30" customHeight="1">${H.map((h,i)=>cellXml(colL(i)+'1',h,S.hd)).join('')}</row>`];
+  let n=1;
+  for(const d of days)for(const o of d.others)for(const it of o.items){
+    n++;X.push(`<row r="${n}">${[cellXml('A'+n,o.date?excelDate(o.date):'',S.dt),cellXml('B'+n,/^\d+$/.test(o.po)?Number(o.po):o.po,S.tx),cellXml('C'+n,o.cat,S.tx),
+      cellXml('D'+n,o.contact,S.tx),cellXml('E'+n,o.phone,S.tx),cellXml('F'+n,o.extraName,S.tx),cellXml('G'+n,o.extraPhone,S.tx),cellXml('H'+n,o.address,S.tx),
+      cellXml('I'+n,o.hh!=null?(o.hh*60+o.mm)/1440:'',S.tm),cellXml('J'+n,it.desc,S.tx),cellXml('K'+n,it.qty,S.num),cellXml('L'+n,o.notes,S.tx)].join('')}</row>`);
+  }
+  const W=[11,13,15,12,13,11,13,26,7,48,8,30];
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${X.join('')}</sheetData><autoFilter ref="A1:L${Math.max(1,n)}"/></worksheet>`;
+}
+const safeName=(n,used)=>{let s=n.replace(/[\[\]:*?\/\\]/g,'.').slice(0,31),b=s,i=2;while(used.has(s))s=(b.slice(0,28)+' '+i++);used.add(s);return s};
+function buildXlsx(days,withExtras){
+  const used=new Set(), sheets=[];
+  for(const d of days){
+    sheets.push({name:safeName(d.name,used),xml:dateSheetXml(d),filter:`$A$12:$AA$${Math.max(13,12+d.rows.length)}`});
+    const n=d.others.reduce((a,o)=>a+o.items.length,0);
+    if(withExtras&&n)sheets.push({name:safeName('נוספות '+d.name.replace(/^\S+\s/,''),used),xml:extrasSheetXml([d]),filter:`$A$1:$L$${n+1}`});
+  }
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${xesc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets>
+<definedNames>${sheets.map((s,i)=>`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${xesc(s.name)}'!${s.filter}</definedName>`).join('')}</definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const root=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  return zipStore([['[Content_Types].xml',ct],['_rels/.rels',root],['xl/workbook.xml',wb],['xl/_rels/workbook.xml.rels',rels],['xl/styles.xml',STYLES],...sheets.map((s,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',s.xml])]);
+}
+/* ===================== טבלת סיכום ===================== */
+/* ===== summary table: which sheet each item goes to ===== */
+const RX={
+  stand:/דוכן/, addon:/תוספת/, celiac:/לל"?ג|ללא גלוטן|צליאק/, vegan:/טבעונ|צמחונ/,
+  selfRun:/בהפעלת/, event:/אירוע|כיבוד|מזנון/, sandwich:/לחמניה|כריך|שניצל/, breakfast:/ארוזית/,
+  sabich:/סביח/, soup:/מרק/, jachnun:/ג['׳]?חנון/, hamin:/חמין/, parts:/חלקי ארוחה|חלקי מנה/,
+  kitchen:/חמגשית|תפזורת/
+};
+const dq=s=>clean(s).replace(/[״”“]/g,'"');
+const qsum=list=>list.reduce((s,i)=>s+(i.qty||0),0);
+const orBlank=n=>n?n:'';
+const timeVal=p=>p.hh==null?'':(p.hh*60+(p.mm||0))/1440;
+const dayName=p=>p.date?DAYS[p.date.getDay()]:'';
+const dateVal=p=>p.date?excelDate(p.date):'';
+
+/* eating time written in the address ("אוכלים 18:30", "שעת אכילה 12:00") */
+function eatTime(raw){
+  const m=String(raw||'').match(/(?:אוכלים|אכילה|ארוחה)\s*(?:בשעה|בשעת|ב-|ב)?\s*:?\s*(\d{1,2})[:.](\d{2})/);
+  return m?{hh:+m[1],mm:+m[2]}:null;
+}
+/* keep only the place in the address: delivery date/time and eating time are dropped (they have columns),
+   and a short remark on its own ("פרווה", "כיבוד", "חלבי") moves to the notes */
+const ADDR_NOTE=/^(?:פרווה|חלבי|בשרי|כיבוד|כשר(?:ות)?(?:\s*\S+)?)$/;
+function cleanAddr(address){
+  const moved=[];
+  let a=' '+address+' ';
+  a=a.replace(/תאריך\s*אספקה\s*:?\s*\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?/g,' ')
+     .replace(/(?:^|\s)שעה\s*:?\s*\d{1,2}[:.]\d{2}/g,' ')
+     .replace(/\**\s*(?:אוכלים|שעת אכילה|ארוחה)\s*(?:בשעה|בשעת|ב-|ב)?\s*:?\s*\d{1,2}[:.]\d{2}/g,' ');
+  const parts=a.split(/(?<=[.])\s+|\s+(?=(?:פרווה|חלבי|בשרי|כיבוד)\.?\s*$)/).map(x=>clean(x));
+  const keep=[];
+  for(const x of parts){const y=x.replace(/[.\s]+$/,'');if(ADDR_NOTE.test(y))moved.push(y);else if(y)keep.push(y)}
+  return {address:clean(keep.join(' ')).replace(/[\s,.:\-–]+$/,''),moved};
+}
+
+/* merge ReportView + MultiReportView into one record per active PO (same rules as the converter) */
+function mergePos(reportRows,multiItems){
+  const byPo=new Map(), skipped=[];
+  for(const r of reportRows){
+    if(!isActive(r.status)){skipped.push(r);continue}
+    const prev=byPo.get(r.po);
+    if(!prev||/עדכון/.test(r.version))byPo.set(r.po,r);
+  }
+  const inReport=new Set(reportRows.map(r=>r.po));
+  for(const it of multiItems){
+    if(inReport.has(it.po)||!it.hdr||!isActive(it.hdr.status))continue;
+    const prev=byPo.get(it.po);
+    if(!prev)byPo.set(it.po,it.hdr);
+    else if(prev.fromMulti&&/עדכון/.test(it.hdr.version))byPo.set(it.po,it.hdr);
+  }
+  const itemsByPo=new Map();
+  for(const it of multiItems){
+    if(it.status&&!isActive(it.status))continue;
+    if(!itemsByPo.has(it.po))itemsByPo.set(it.po,[]);
+    itemsByPo.get(it.po).push({...it,desc:dq(it.desc)});
+  }
+  for(const [po,list] of itemsByPo){
+    if(list.some(i=>/עדכון/.test(i.version))&&list.some(i=>i.version&&!/עדכון/.test(i.version)))
+      itemsByPo.set(po,list.filter(i=>/עדכון/.test(i.version)));
+  }
+  const pos=[];
+  for(const [po,r] of byPo){
+    const A=parseAddress(r.addrRaw), W=splitWhen(r.when);
+    const same=A.extraPhone&&A.extraPhone.replace(/\D/g,'')===String(r.phone).replace(/\D/g,'');
+    const CA=cleanAddr(A.address), eat=eatTime(r.addrRaw);
+    A.address=CA.address||A.address; A.notes=[...CA.moved,A.notes].filter(Boolean).join(' | ');
+    pos.push({po,status:clean(r.status),eat,isNew:/^חדש/.test(clean(r.status)),contact:r.contact,phone:fixPhone(r.phone),
+      extraName:same?'':A.extraName.replace(/^(?:שם\s*)?איש קשר(?:\s*נוסף)?\s*[-:]?\s*/,''),extraPhone:same?'':A.extraPhone,address:A.address,cold:A.cold,addrVegan:A.vegan,notes:A.notes,
+      addrRaw:r.addrRaw,dateKey:W.key,date:W.d,hh:W.hh,mm:W.mm,items:itemsByPo.get(po)||[]});
+  }
+  return {pos,skipped};
+}
+
+/* sandwich types written in the delivery address: "50 חלה שניצל" / "50 פרנה פרגית" → one row each */
+const SW=/חל[הת]|פרנה|כריך|לחמני|באגט|לאפה|פיתה|טורטי|שניצל|פרגית|אסאדו|המבורגר|קציצ|שווארמה|שוורמה/;
+function sandwichTypes(raw){
+  const lines=String(raw||'').replace(/\r/g,'').split('\n').map(l=>clean(l).replace(/^["'״\s]+|["'״\s]+$/g,'')).filter(Boolean);
+  const split=[], used=[]; let name=null;
+  for(const l of lines){
+    if(!SW.test(l)||RX.vegan.test(l)||PHONE.test(l))continue;
+    const m=l.match(/^(\d{1,4})\s*[-:]?\s*(.+)$/)||l.match(/^(.+?)\s*[-:]?\s*(\d{1,4})$/);
+    if(m){const q=+(/^\d/.test(m[1])?m[1]:m[2]), n=clean(/^\d/.test(m[1])?m[2]:m[1]);if(SW.test(n)){split.push({q,name:n});used.push(l);continue}}
+    if(!/\d/.test(l)&&!name){name=clean(l.replace(/\s*(?:בבקשה|שיגיע\s*\S*|נא\s.*)[!.\s]*$/,'').replace(/!+$/,''));used.push(l)}
+  }
+  return {split,name,used};
+}
+
+/* ===== sheet definitions: header, widths, and the rows one PO produces ===== */
+const C=(v,t)=>({v,t}); // t: d=date, h=time, n=number, w=wrap, g=grey, k=link
+const SHEETS=[
+ {name:'אירוע צבא עם הפעלה',color:'00B0F0',mergeCols:[4],
+  head:['פק"א','תאריך','שעת אכילה','כתובת אספקה','סוג אירוע','כמות','תוספת','כמות עמדות','עמדות','תוספת לעמדות','תפעול','איש קשר','טלפון','וואטסאפ','הערות'],
+  widths:[12,11,8,24,28,8,8,9,30,28,12,12,13,16,34],
+  take:(its)=>{
+    const st=its.filter(i=>RX.stand.test(i.desc));
+    const ev=its.filter(i=>(RX.event.test(i.desc)||(!i.desc&&st.length))&&!RX.selfRun.test(i.desc)&&!RX.stand.test(i.desc));
+    if(!st.length&&!ev.some(i=>!RX.addon.test(i.desc)))return null;
+    return [...ev,...st];
+  },
+  rows:(p,its)=>{
+    const main=its.filter(i=>!RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
+    const extra=its.filter(i=>!RX.stand.test(i.desc)&&RX.addon.test(i.desc));
+    const stands=its.filter(i=>RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
+    const addons=its.filter(i=>RX.stand.test(i.desc)&&RX.addon.test(i.desc));
+    const G=stands.map(s=>({q:s.qty,g:s.desc,h:''}));
+    for(const a of addons){
+      const key=a.desc.replace(/^תוספת\s*(?:מנה\s*)?(?:ל)?דוכן\s*/,'').trim();
+      const txt=a.qty+' תוספת '+key;
+      const m=G.find(x=>!x.h&&stands[G.indexOf(x)].desc.includes(key))||G.find(x=>!x.h);
+      if(m)m.h=txt;else G.push({q:'',g:'',h:txt});
+    }
+    if(!G.length)G.push({q:'',g:'',h:''});
+    const notes=[p.extraPhone?'איש קשר נוסף: '+[p.extraName,p.extraPhone].filter(Boolean).join(' '):'',p.notes].filter(Boolean).join(' | ');
+    return G.map((x,k)=>[
+      C(p.po,'n'),C(dateVal(p),'d'),C(k||!p.eat?'':(p.eat.hh*60+p.eat.mm)/1440,'h'),C(p.address,'w'),
+      C(k?'':(main.length?main.map(i=>i.desc||'(ללא תיאור)').join(' + '):'עמדות'),'w'),C(k?'':orBlank(qsum(main)),'n'),C(k?'':orBlank(qsum(extra)),'n'),
+      C(x.q,'n'),C(x.g,'w'),C(x.h,'w'),C('','g'),C(k?'':p.contact),C(k?'':p.phone),C(k?'':p,'k'),C(k?'':notes,'w')]);
+  }},
+ {name:'אירועים ללא הפעלה',color:'7030A0',
+  head:['מספר פק"א','','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת','סוג מנה','מנות רגילות','תוספת מנות','צליאק','סה"כ כמות מנות','תאריך','שעה','מנה ראשונה דג','מנה ראשונה רגיל','עיקרית פרגית','עיקרית עוף','עיקרית בקר','טבעוני','פחמימה 1','פחמימה 2','ירקנית'],
+  widths:[12,6,11,12,12,12,26,26,10,10,8,12,11,7,12,13,11,10,10,8,9,9,8],
+  take:(its)=>{
+    const ev=its.filter(i=>RX.event.test(i.desc)&&RX.selfRun.test(i.desc));
+    if(!ev.length)return null;
+    return [...ev,...its.filter(i=>!RX.event.test(i.desc)&&!RX.stand.test(i.desc)&&(RX.addon.test(i.desc)||RX.celiac.test(i.desc)))];
+  },
+  rows:(p,its)=>{
+    const cel=its.filter(i=>RX.celiac.test(i.desc)), add=its.filter(i=>!RX.celiac.test(i.desc)&&RX.addon.test(i.desc));
+    const main=its.filter(i=>!cel.includes(i)&&!add.includes(i));
+    return [[C(p.po,'n'),C('','g'),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(p.address,'w'),
+      C(main.map(i=>i.desc).join(' + '),'w'),C(qsum(main),'n'),C(orBlank(qsum(add)),'n'),C(orBlank(qsum(cel)),'n'),C('sumIJK','n'),
+      C(dateVal(p),'d'),C(timeVal(p),'h'),...Array(9).fill(0).map(()=>C('','n'))]];
+  }},
+ {name:'כריכים עזה',color:'FFC000',
+  head:['מספר פק"א','פלאפון של הנהג','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת','סוג מנה','מנות רגילות','טבעוני','צליאק','סה"כ כמות מנות','תאריך','שעה','הערות מהכתובת'],
+  widths:[12,13,11,12,12,12,26,14,10,8,8,12,11,7,30],
+  take:(its)=>{
+    const s=its.filter(i=>RX.sandwich.test(i.desc));
+    if(!s.length)return null;
+    return [...s,...its.filter(i=>!s.includes(i)&&RX.celiac.test(i.desc)&&!RX.event.test(i.desc))];
+  },
+  rows:(p,its)=>{
+    const cel=its.filter(i=>RX.celiac.test(i.desc)), veg=its.filter(i=>!cel.includes(i)&&RX.vegan.test(i.desc));
+    const reg=its.filter(i=>!cel.includes(i)&&!veg.includes(i));
+    const R=qsum(reg), V=qsum(veg), K=qsum(cel), T=sandwichTypes(p.addrRaw);
+    let notes=p.notes.split(' | ').filter(n=>n&&!T.used.some(u=>norm(n).includes(norm(u))||norm(u).includes(norm(n)))).join(' | ');
+    let list=T.split.map(x=>({h:x.name,i:x.q}));
+    if(list.length){
+      const tot=list.reduce((a,x)=>a+x.i,0);
+      if(tot===R+V&&V)list[0].i=Math.max(0,list[0].i-V);
+      else if(tot!==R)notes=['לבדוק: בכתובת '+tot+' כריכים, בהזמנה '+(R+V),notes].filter(Boolean).join(' | ');
+    }else list=[{h:T.name||'חלה שניצל',i:R}];
+    const addr=clean(T.used.reduce((s,u)=>s.replace(u,' '),p.address))||p.address;
+    return list.map((x,k)=>[C(p.po,'n'),C(''),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(addr,'w'),C(x.h),
+      C(x.i,'n'),C(k?'':V,'n'),C(k?'':K,'n'),C('sumIJK','n'),C(dateVal(p),'d'),C(timeVal(p),'h'),C(k?'':notes,'w')]);
+  }},
+ {name:'ארוזית בוקר',color:'92D050',
+  head:['פק"א','כמות','חמגשית טבעוני','אלרגני','מיקום','איש קשר','טלפון','איש קשר נוסף','טלפון 2','תאריך','שעה'],
+  widths:[12,7,13,8,24,11,12,12,12,11,7],
+  take:its=>{const b=its.filter(i=>RX.breakfast.test(i.desc));return b.length?b:null},
+  rows:(p,its)=>{
+    const veg=its.filter(i=>RX.vegan.test(i.desc)), reg=its.filter(i=>!veg.includes(i));
+    return [[C(p.po,'n'),C(qsum(reg),'n'),C(orBlank(qsum(veg)),'n'),C('','n'),C(p.address,'w'),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(dateVal(p),'d'),C(timeVal(p),'h')]];
+  }},
+ {name:'סביח',color:'C55A11',
+  head:['מספר פק"א','פלאפון של הנהג','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת','סוג מנה','סביח','פריקסה','צליאק','סה"כ כמות מנות','יום אספקה','תאריך','שעה','בוקר / ערב','הערות','קיבולת'],
+  widths:[12,13,11,12,12,12,22,14,7,8,7,12,9,11,7,9,20,8],
+  take:its=>{const b=its.filter(i=>RX.sabich.test(i.desc)||/פריקסה/.test(i.desc));return b.length?b:null},
+  rows:(p,its)=>{
+    const cel=its.filter(i=>RX.celiac.test(i.desc)), fr=its.filter(i=>!cel.includes(i)&&/פריקסה/.test(i.desc)), sb=its.filter(i=>!cel.includes(i)&&!fr.includes(i));
+    return [[C(p.po,'n'),C(''),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(p.address,'w'),C(its.map(i=>i.desc).join(' + '),'w'),
+      C(qsum(sb),'n'),C(qsum(fr),'n'),C(qsum(cel),'n'),C('sumIJK','n'),C(dayName(p)),C(dateVal(p),'d'),C(timeVal(p),'h'),C(p.hh==null?'':(p.hh>=16?'ערב':'בוקר')),C(p.notes,'w'),C('')]];
+  }},
+ {name:'מרק',color:'00B050',sumRow:[8,9,10,11],
+  head:['מס פק"א','איש קשר','טלפון','מיקום','סוג מנה','יום אספקה','תאריך','שעת אספקה','אפונה','חרירה','עדשים','קובה דלעת'],
+  widths:[12,11,12,22,16,9,11,9,7,7,7,10],
+  take:its=>{const b=its.filter(i=>RX.soup.test(i.desc));return b.length?b:null},
+  rows:(p,its)=>{
+    const q=re=>orBlank(qsum(its.filter(i=>re.test(i.desc))));
+    return [[C(p.po,'n'),C(p.contact),C(p.phone),C(p.address,'w'),C(its.map(i=>i.desc).join(' + '),'w'),C(dayName(p)),C(dateVal(p),'d'),C(timeVal(p),'h'),
+      C(q(/אפונה/),'n'),C(q(/חרירה/),'n'),C(q(/עדשים/),'n'),C(q(/קובה|דלעת/),'n')]];
+  }},
+ {name:'גחנון',color:'E673BA',title:'גחנון --- כל מארז 10 מנות',
+  head:['מספר פק"א','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת','סוג מנה','יום אספקה','תאריך','שעה','כמות מארזים','','הערות'],
+  widths:[12,11,12,12,12,20,16,9,11,7,11,4,24],
+  take:its=>{const b=its.filter(i=>RX.jachnun.test(i.desc));return b.length?b:null},
+  rows:(p,its)=>[[C(p.po,'n'),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(p.address,'w'),C(its.map(i=>i.desc).join(' + '),'w'),
+    C(dayName(p)),C(dateVal(p),'d'),C(timeVal(p),'h'),C(qsum(its),'n'),C(''),C(p.notes,'w')]]},
+ {name:'חמין',color:'A9D08E',
+  head:['מס פק"א','איש קשר','טלפון','איש קשר נוסף','טלפון 2','מיקום','סוג מנה','יום אספקה','תאריך','שעת אספקה','חמין','טבעוני','צליאק','סה"כ','הערות'],
+  widths:[12,11,12,12,12,24,14,9,11,9,8,8,8,8,24],
+  take:its=>{const b=its.filter(i=>RX.hamin.test(i.desc));return b.length?b:null}, // includes "חלקי ארוחה חמין בשרי/טבעוני"
+  rows:(p,its)=>{
+    const cel=its.filter(i=>RX.celiac.test(i.desc)||/אלרג/.test(i.desc)), veg=its.filter(i=>!cel.includes(i)&&RX.vegan.test(i.desc)), reg=its.filter(i=>!cel.includes(i)&&!veg.includes(i));
+    return [[C(p.po,'n'),C(p.contact),C(p.phone),C(p.extraName),C(p.extraPhone),C(p.address,'w'),C(reg.concat(veg,cel).map(i=>i.desc).join(' + '),'w'),
+      C(dayName(p)),C(dateVal(p),'d'),C(timeVal(p),'h'),C(orBlank(qsum(reg)),'n'),C(orBlank(qsum(veg)),'n'),C(orBlank(qsum(cel)),'n'),C('sum:K:M','n'),C(p.notes,'w')]];
+  }},
+ {name:'חלקי מנה',color:'8FAADC',
+  head:['מס פק"א','איש קשר','טלפון','מיקום','סוג שילוח','יום אספקה','תאריך','שעת אכילה','טבעוני+צמחוני-מנות','עיקרית-מנות','עיקרית-מנות','ירקנית-ק"ג','פחמימה-ק"ג','פחמימה-ק"ג','סלט ק"ג','אלרגנים','הערות מהכתובת'],
+  widths:[12,11,12,22,9,9,11,9,12,11,11,10,11,11,9,9,34],
+  take:its=>{if(its.some(i=>/תפזורת/.test(i.desc)&&!RX.parts.test(i.desc)))return null; // PO with a bulk meal (ארוחה מוכנה בתפזורת) belongs to the trays file
+    const b=its.filter(i=>RX.parts.test(i.desc)&&!RX.hamin.test(i.desc));return b.length?[...b,...its.filter(i=>/תוספת מנה עיקרית/.test(i.desc)&&!RX.event.test(i.desc))]:null},
+  rows:(p,its)=>{
+    const q=re=>qsum(its.filter(i=>re.test(i.desc)));
+    const kg=(re,f)=>{const n=q(re);return n?{v:n*f,f:n+'*'+f,t:'n'}:C('','n')};
+    return [[C(p.po,'n'),C(p.contact),C(p.phone),C(p.address,'w'),C(p.cold?'מצונן':'חם'),C(dayName(p)),C(dateVal(p),'d'),C(timeVal(p),'h'),
+      C(orBlank(q(/מנה\s*(?:טבעוני|צמחוני)/)),'n'),C(orBlank(q(/מנה\s*בשרית|תוספת מנה עיקרית/)),'n'),C(orBlank(q(/מנה\s*דג|מנת\s*דג/)),'n'),
+      kg(/ירקנית/,0.09),kg(/פחמימה/,0.18),C('','n'),kg(/סלט/,0.18),C(orBlank(q(RX.celiac)),'n'),C(p.notes,'w')]];
+  }},
+];
+
+// every sheet ends with the PO status as written in DBC
+SHEETS.forEach(d=>{d.head=[...d.head,'סטטוס בדיביסי'];d.widths=[...d.widths,13]});
+function buildSummary(reportRows,multiItems){
+  const {pos,skipped}=mergePos(reportRows,multiItems);
+  const out=SHEETS.map(d=>({def:d,entries:[]}));
+  const kitchenOnly=[], unknown=[], noItems=[];
+  for(const p of pos){
+    if(!p.items.length){noItems.push(p.po);continue}
+    const used=new Set();
+    out.forEach(s=>{const its=s.def.take(p.items);if(its){its.forEach(i=>used.add(i));s.entries.push({p,rows:s.def.rows(p,its).map((row,k)=>[...row,C(k?'':p.status)])})}});
+    const rest=p.items.filter(i=>!used.has(i));
+    const withKitchen=p.items.some(x=>RX.kitchen.test(x.desc));
+    const unk=rest.filter(i=>!RX.kitchen.test(i.desc)&&!((RX.addon.test(i.desc)||RX.parts.test(i.desc))&&withKitchen));
+    unk.forEach(i=>unknown.push({po:p.po,desc:i.desc||'(ללא תיאור)',qty:i.qty}));
+    if(!used.size&&!unk.length)kitchenOnly.push(p.po);
+  }
+  const byTime=(a,b)=>(a.p.dateKey<b.p.dateKey?-1:a.p.dateKey>b.p.dateKey?1:0)||((a.p.hh??99)*60+(a.p.mm??0))-((b.p.hh??99)*60+(b.p.mm??0))||a.p.address.localeCompare(b.p.address,'he')||a.p.po.localeCompare(b.p.po);
+  for(const s of out){
+    s.entries.sort(byTime);
+    const blocks=new Map();
+    for(const e of s.entries){if(!blocks.has(e.p.dateKey))blocks.set(e.p.dateKey,{key:e.p.dateKey,date:e.p.date,entries:[]});blocks.get(e.p.dateKey).entries.push(e)}
+    s.blocks=[...blocks.values()];
+  }
+  return {sheets:out,pos,skipped,kitchenOnly,unknown,noItems};
+}
+
+/* ===== xlsx writer ===== */
+function styleBook(){
+  const fonts=['<font><sz val="11"/><name val="Arial"/></font>','<font><b/><sz val="11"/><name val="Arial"/></font>',
+    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>','<font><b/><u/><sz val="11"/><color rgb="FF1E8E3E"/><name val="Arial"/></font>',
+    '<font><b/><sz val="14"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>'];
+  const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'], fillIx=new Map();
+  const fill=c=>{if(!c)return 0;if(!fillIx.has(c)){fillIx.set(c,fills.length);fills.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`)}return fillIx.get(c)};
+  const xfs=['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'], xfIx=new Map();
+  const st=(font,fillC,fmt,align)=>{
+    const k=[font,fillC,fmt,align].join('|');
+    if(!xfIx.has(k)){
+      // readingOrder 2 = right-to-left, so "50 תוספת ..." shows the number first
+      const al=align==='hc'?'<alignment horizontal="center" vertical="center" wrapText="1" readingOrder="2"/>':align==='c'?'<alignment horizontal="center" vertical="top" readingOrder="2"/>':align==='w'?'<alignment vertical="top" wrapText="1" readingOrder="2"/>':'<alignment vertical="top" readingOrder="2"/>';
+      xfIx.set(k,xfs.length);
+      xfs.push(`<xf numFmtId="${fmt}" fontId="${font}" fillId="${fill(fillC)}" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">${al}</xf>`);
+    }
+    return xfIx.get(k);
+  };
+  const xml=()=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="2"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/></numFmts>
+<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  return {st,xml};
+}
+const lum=h=>{const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return .299*r+.587*g+.114*b};
+function cx(ref,v,s,f){
+  if(f!=null){
+    if(v===''||v==null)return `<c r="${ref}" s="${s}" t="str"><f>${xesc(f)}</f><v></v></c>`;
+    return typeof v==='number'?`<c r="${ref}" s="${s}"><f>${xesc(f)}</f><v>${+v.toFixed(6)}</v></c>`:`<c r="${ref}" s="${s}" t="str"><f>${xesc(f)}</f><v>${xesc(v)}</v></c>`;
+  }
+  if(v===''||v==null)return `<c r="${ref}" s="${s}"/>`;
+  if(typeof v==='number')return `<c r="${ref}" s="${s}"><v>${v}</v></c>`;
+  return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+}
+const LINK_CELL='S1';
+// WhatsApp link written as a real hyperlink: Excel's HYPERLINK() formula stops at 255 characters,
+// and the encoded Hebrew message is much longer than that
+function waUrl(p,link){
+  let d=String(p.phone||'').replace(/\D/g,'');
+  if(!d)return '';
+  if(d.startsWith('0'))d='972'+d.slice(1);else if(!d.startsWith('972'))d='972'+d;
+  const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
+  const msg=['שלום,','מדברת עדן מלי בר','נכנסה לך פקא מספר: '+p.po,'לתאריך: '+dt,'כתובת לאספקה: '+p.address,link||'','','נשמח שתמלא בהקדם את התפריט ותשיב לנו בהודעה חוזרת שמילאת.'].join('\n');
+  return 'https://wa.me/'+d+'?text='+encodeURIComponent(msg);
+}
+function sheetXml(s,SB,link){
+  const d=s.def, last=d.head.length-1, lastCol=colL(last), X=[], merges=[]; s.links=[];
+  const hdFont=lum(d.color)>150?1:2;
+  const hd=SB.st(hdFont,d.color,0,'hc');
+  let n=1;
+  if(d.title){X.push(`<row r="1" ht="24" customHeight="1">${cx('A1',d.title,SB.st(4,d.color,0,'hc'))}</row>`);merges.push(`A1:${lastCol}1`);n=2}
+  const extra=[];
+  if(d.name==='אירוע צבא עם הפעלה')extra.push(cx('R1','קישור בהודעת הוואטסאפ:',SB.st(1,'',0,'')),cx(LINK_CELL,link||'(לא הוזן קישור בדשבורד)',SB.st(0,'FFF2CC',0,'')));
+  const header=r=>`<row r="${r}" ht="30" customHeight="1">${d.head.map((h,c)=>cx(colL(c)+r,h,hd)).join('')}${r===1?extra.join(''):''}</row>`;
+  const blocks=s.blocks.length?s.blocks:[{entries:[]}];
+  for(const b of blocks){
+    X.push(header(n));n++;
+    const first=n;
+    for(const e of b.entries){
+      if(e.rows.length>1){merges.push(`A${n}:A${n+e.rows.length-1}`);for(const ci of [last,...(d.mergeCols||[])]){const sc=colL(ci);merges.push(`${sc}${n}:${sc}${n+e.rows.length-1}`)}}
+      for(const [ri,row] of e.rows.entries()){
+        if(ri)row[0]=C('',row[0].t);
+        const y=e.p.isNew?'FFF2CC':'';
+        const cells=row.map((c,ci)=>{
+          const ref=colL(ci)+n;
+          const sty=c.t==='d'?SB.st(0,y,164,'c'):c.t==='h'?SB.st(0,y,165,'c'):c.t==='n'?SB.st(0,y,0,'c'):c.t==='w'?SB.st(0,y,0,'w'):c.t==='g'?SB.st(0,'F2F2F2',0,''):c.t==='k'?SB.st(3,y,0,'c'):SB.st(0,y,0,'');
+          if(typeof c.v==='string'&&c.v.startsWith('sum:')){const [,a,b]=c.v.split(':');return cx(ref,'',sty,`IF(COUNT(${a}${n}:${b}${n})=0,"",SUM(${a}${n}:${b}${n}))`)}
+          if(c.v==='sumIJK')return cx(ref,'',sty,`IF(COUNT(I${n}:K${n})=0,"",SUM(I${n}:K${n}))`);
+          if(c.t==='k'){const u=c.v?waUrl(c.v,link):'';if(!u)return cx(ref,'',sty);s.links.push({ref,url:u});return cx(ref,'שליחה בוואטסאפ',sty)}
+          if(c.f)return cx(ref,c.v,sty,c.f);
+          return cx(ref,typeof c.v==='string'&&c.t==='n'&&/^\d+$/.test(c.v)?Number(c.v):c.v,sty);
+        });
+        X.push(`<row r="${n}">${cells.join('')}</row>`);n++;
+      }
+    }
+    if(d.sumRow&&b.entries.length){
+      const sb=SB.st(1,'EDEDED',0,'c');
+      X.push(`<row r="${n}">${d.sumRow.map(ci=>cx(colL(ci)+n,'',sb,`SUM(${colL(ci)}${first}:${colL(ci)}${n-1})`)).join('')}</row>`);n++;
+    }
+  }
+  const cols=d.widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')+(d.name==='אירוע צבא עם הפעלה'?'<col min="18" max="18" width="18" customWidth="1"/><col min="19" max="19" width="40" customWidth="1"/>':'');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr><tabColor rgb="FF${d.color}"/><pageSetUpPr fitToPage="1"/></sheetPr>
+<sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${X.join('')}</sheetData>
+${merges.length?`<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}
+${s.links.length?`<hyperlinks>${s.links.map((h,i)=>`<hyperlink ref="${h.ref}" r:id="rIdL${i+1}"/>`).join('')}</hyperlinks>`:''}
+<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/>
+</worksheet>`;
+}
+function buildSummaryXlsx(res,link){
+  const SB=styleBook();
+  const sheets=res.sheets.map(s=>{const xml=sheetXml(s,SB,link);return {name:s.def.name,xml,links:s.links}});
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${xesc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const root=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  return zipStore([['[Content_Types].xml',ct],['_rels/.rels',root],['xl/workbook.xml',wb],['xl/_rels/workbook.xml.rels',rels],['xl/styles.xml',SB.xml()],...sheets.map((s,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',s.xml]),
+    ...sheets.map((s,i)=>s.links.length?['xl/worksheets/_rels/sheet'+(i+1)+'.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${s.links.map((h,j)=>`<Relationship Id="rIdL${j+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${xesc(h.url)}" TargetMode="External"/>`).join('')}</Relationships>`]:null).filter(Boolean)]);
+}
+
+/* ===================== end טבלת סיכום ===================== */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(files){
+  const enc=new TextEncoder(),parts=[],central=[];let off=0;
+  for(const [name,txt] of files){
+    const nb=enc.encode(name),data=enc.encode(txt),crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer),nb,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer),nb);off+=30+nb.length+data.length;
+  }
+  const cs=central.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  const all=[...parts,...central,new Uint8Array(e.buffer)],u=new Uint8Array(all.reduce((a,b)=>a+b.length,0));let p=0;for(const a of all){u.set(a,p);p+=a.length}
+  return u;
+}
+/* ===== UI ===== */
+const $=id=>document.getElementById(id);
+let reportRows=null, multiRows=null, result=null, current=null; const included=new Set();
+let sumRes=null;
+
+function decodeText(u8){
+  if(u8[0]===0xFF&&u8[1]===0xFE)return new TextDecoder('utf-16le').decode(u8);
+  if(u8[0]===0xFE&&u8[1]===0xFF)return new TextDecoder('utf-16be').decode(u8);
+  const head=new TextDecoder('latin1').decode(u8.slice(0,4096));
+  const m=head.match(/charset\s*=\s*["']?([\w-]+)/i);
+  if(m&&!/unicode/i.test(m[1])){try{return new TextDecoder(m[1].toLowerCase()).decode(u8)}catch(e){}}
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(u8)}catch(e){return new TextDecoder('windows-1255').decode(u8)}
+}
+function rowsFromHtml(txt){
+  if(!/<table/i.test(txt))return null;
+  const doc=new DOMParser().parseFromString(txt.replace(/<br[^>]*>/gi,'\n'),'text/html');
+  const tables=[...doc.querySelectorAll('table')].filter(t=>!t.querySelector('table'));
+  const rows=[];
+  tables.forEach(t=>{for(const tr of t.rows){rows.push([...tr.cells].map(td=>{const v=td.textContent.replace(/^\s+|\s+$/g,'');return v===''?null:v}))}rows.push([])});
+  return rows;
+}
+async function readFile(file){
+  const buf=await file.arrayBuffer(), u8=new Uint8Array(buf);
+  const binary=(u8[0]===0x50&&u8[1]===0x4B)||(u8[0]===0xD0&&u8[1]===0xCF);
+  if(!binary){
+    const txt=decodeText(u8);
+    const rows=rowsFromHtml(txt);
+    if(rows&&kind(rows))return rows;
+    if(/<frameset|\.files\/sheet\d+\.htm/i.test(txt))throw new Error('webpage');
+  }
+  if(typeof XLSX==='undefined')throw new Error('nolib');
+  const wb=XLSX.read(buf,{type:'array'});
+  let best=[];
+  for(const n of wb.SheetNames){
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null,blankrows:true});
+    if(kind(rows))return rows;
+    if(rows.length>best.length)best=rows;
+  }
+  return best;
+}
+async function handle(file){
+  setStatus('קוראת את '+file.name+'…');
+  try{
+    const rows=await readFile(file); const k=kind(rows);
+    if(!k){showNotes([{c:'bad',t:'לא זיהיתי את הקובץ '+file.name+'. צריך קובץ ReportView (עם "כתובת לאספקה") או MultiReportView (עם "מס. שורה"). אם פתחת ושמרת אותו, שמרי בשם כ-Excel (.xlsx) והעלי שוב.'}]);setStatus('');return}
+    if(k==='report'){reportRows=rows;mark('report',file.name)}else{multiRows=rows;mark('multi',file.name)}
+    setStatus('');run();
+  }catch(e){
+    const m=e&&e.message;
+    showNotes([{c:'bad',t:m==='webpage'?'הקובץ '+file.name+' נשמר כדף אינטרנט, והנתונים שלו נמצאים בתיקייה נפרדת ולא בקובץ. העלי את הקובץ כמו שהוא יורד מהמערכת, או פתחי אותו באקסל ושמרי בשם כ-Excel (.xlsx).':
+      m==='nolib'?'רכיב הקריאה של קבצי אקסל לא נטען. רענני את הדף ונסי שוב.':'לא הצלחתי לקרוא את '+file.name+'. נסי לשמור אותו כ-Excel (.xlsx) ולהעלות שוב.'}]);
+    setStatus('');
+  }
+}
+function mark(k,name){$('slot-'+k).classList.add('ok');$('hint-'+k).textContent=name}
+function setStatus(t){$('status').textContent=t}
+
+function run(){
+  if(!reportRows&&!multiRows)return;
+  let rep=[];
+  if(reportRows){try{rep=parseReport(reportRows)}catch(e){showNotes([{c:'bad',t:e.message}]);return}}
+  const items=multiRows?parseMulti(multiRows):null;
+  result=build(rep,items);
+  sumRes=items?buildSummary(rep,items):null;
+  included.clear();result.dates.forEach(d=>included.add(d.key));
+  current=result.dates[0]?result.dates[0].key:null;
+  renderAll();
+  setStatus(multiRows?'מוכן להורדה':'נקלט ReportView. בלי MultiReportView אין כמויות וסוג מנה');
+}
+function renderAll(){
+  $('result').hidden=false;
+  const all=result.dates.flatMap(d=>d.rows);
+  const tot=k=>all.filter(r=>r.flag!=='other').reduce((s,r)=>s+(r[k]||0),0);
+  const review=all.filter(r=>r.flag==='review'||r.flag==='other').length;
+  const st=[[result.activeCount,'פק"אות פעילות'],[all.length,'שורות'],[result.dates.length,result.dates.length===1?'יום אספקה':'ימי אספקה']];
+  if(result.hasMulti)st.push([tot('I'),'רגילות'],[tot('J'),'טבעוני'],[tot('K'),'צליאק'],[review,'לבדיקה',review>0]);
+  $('stats').innerHTML='';
+  st.forEach(([n,l,a])=>{const d=document.createElement('div');d.className='stat'+(a?' alert':'');d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=n;d.querySelector('span').textContent=l;$('stats').appendChild(d)});
+  const notes=[];
+  if(!result.hasMulti)notes.push({c:'warn',t:'עדיין לא הועלה MultiReportView. הקובץ ייצא עם הכתובות, אנשי הקשר והשעות, אבל בלי סוג מנה וכמויות.'});
+  if(reportRows&&result.fromMulti&&result.fromMulti.length)notes.push({c:'info',t:result.fromMulti.length+' פק"אות קיימות רק ב-MultiReportView ולא ב-ReportView. הפרטים שלהן (איש קשר, כתובת ושעה) נלקחו מ-MultiReportView.'});
+  {const nw=result.dates.flatMap(d=>d.rows.concat(d.others)).filter(r=>r.isNew).map(r=>r.po);if(nw.length)notes.push({c:'warn',t:new Set(nw).size+' פק"אות בסטטוס "חדשה" נקלטו. בהערות שלהן כתוב "פק"א חדשה (טרם אושרה)": ',code:[...new Set(nw)].join(', ')})}
+  if(result.skipped.length)notes.push({c:'info',t:result.skipped.length+' שורות לא נכללו כי הסטטוס שלהן אינו "אושרה לביצוע" או "חדשה": ',code:result.skipped.map(s=>s.po+' ('+s.status+')').join(', ')});
+  if(result.noItems.length)notes.push({c:'bad',t:'פק"אות פעילות שאין להן פריטים ב-MultiReportView (מסומנות בצהוב): ',code:result.noItems.join(', ')});
+  if(result.missingInReport.length)notes.push({c:'warn',t:'פק"אות שיש ב-MultiReportView אבל לא ב-ReportView, ולכן לא נכנסו: ',code:result.missingInReport.join(', ')});
+  if(result.review.length)notes.push({c:'warn',t:'פריטים שלא זוהה להם סוג מנה. בעמודת סוג מנה נרשם תיאור הפריט הארוך והשורה מסומנת בצהוב:',list:result.review.map(r=>r.po+' · '+r.desc)});
+  const oth=result.dates.flatMap(d=>d.others);
+  if(oth.length)notes.push({c:'info',t:new Set(oth.map(o=>o.po)).size+' פק"אות אחרות (אירועים, כיבוד, חלקי מנות, כריכים, דוכנים) נרשמו בגיליון "הזמנות נוספות" עם כל הפרטים.',list:oth.map(o=>o.po+' · '+o.cat+' · '+o.items.map(i=>i.desc+' ×'+i.qty).join(', '))});
+  showNotes(notes);
+  renderDays();renderDay();renderSummary();
+  updateButtons();
+}
+function updateButtons(){
+  const k=!!(result&&result.dates.length&&included.size), s=!!sumRes;
+  $('btn-dl').disabled=!k;$('btn-sum').disabled=!s;$('btn-both').disabled=!(k&&s);
+}
+function renderSummary(){
+  $('sum-box').hidden=!sumRes;$('sheets').innerHTML='';$('sum-notes').innerHTML='';
+  if(!sumRes)return;
+  sumRes.sheets.forEach(s=>{
+    const d=document.createElement('div');d.className='sh'+(s.entries.length?'':' empty');
+    const i=document.createElement('i');i.style.background='#'+s.def.color;
+    const t=document.createElement('div');const b=document.createElement('b');b.textContent=s.def.name;const sp=document.createElement('span');
+    sp.textContent=s.entries.length?s.entries.length+' פק"אות · '+s.blocks.length+(s.blocks.length===1?' תאריך':' תאריכים'):'אין הזמנות';
+    t.append(b,sp);d.append(i,t);$('sheets').appendChild(d);
+  });
+  renderWa();
+  if(sumRes.unknown.length){
+    const d=document.createElement('div');d.className='note warn';d.textContent='פריטים שלא זיהיתי לאיזה גיליון בטבלת הסיכום הם שייכים, ולכן לא נכנסו אליה: ';
+    const c=document.createElement('code');c.textContent=sumRes.unknown.map(u=>u.po+' · '+u.desc+' ×'+u.qty).join(', ');d.appendChild(c);$('sum-notes').appendChild(d);
+  }
+}
+function showNotes(list){
+  const box=$('notes');box.innerHTML='';
+  list.forEach(n=>{
+    const d=document.createElement('div');d.className='note '+n.c;d.textContent=n.t;
+    if(n.code){const c=document.createElement('code');c.textContent=n.code;d.appendChild(c)}
+    if(n.list){const det=document.createElement('details'),s=document.createElement('summary'),ul=document.createElement('ul');s.textContent='הצגת הרשימה ('+n.list.length+')';
+      n.list.slice(0,300).forEach(x=>{const li=document.createElement('li');li.textContent=x;ul.appendChild(li)});det.append(s,ul);d.appendChild(det)}
+    box.appendChild(d);
+  });
+}
+function renderDays(){
+  const box=$('days');box.innerHTML='';
+  result.dates.forEach(d=>{
+    const chip=document.createElement('div');chip.className='day';chip.setAttribute('role','tab');chip.tabIndex=0;
+    chip.setAttribute('aria-selected',String(d.key===current));
+    const cb=document.createElement('input');cb.type='checkbox';cb.id='inc-'+d.key;cb.checked=included.has(d.key);cb.title='לכלול את היום בקובץ';cb.setAttribute('aria-label','לכלול את '+d.name+' בקובץ');
+    cb.addEventListener('click',e=>{e.stopPropagation();cb.checked?included.add(d.key):included.delete(d.key);updateButtons()});
+    const lab=document.createElement('span');lab.textContent=d.name;
+    const sm=document.createElement('small');sm.textContent=d.pos.length+' פק"א';
+    chip.append(lab,sm,cb);
+    const pick=()=>{current=d.key;renderDays();renderDay()};
+    chip.addEventListener('click',pick);chip.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+    box.appendChild(chip);
+  });
+}
+function cell(tr,v,cls){const td=document.createElement('td');if(cls)td.className=cls;td.textContent=v==null?'':v;tr.appendChild(td);return td}
+function renderDay(){
+  const d=result.dates.find(x=>x.key===current); const tb=$('tbody');tb.innerHTML='';
+  if(!d){tb.innerHTML='<tr><td colspan="15" class="empty">אין שורות</td></tr>';return}
+  // summaries
+  const cats=catCounts(d.pos), sum=summary(d.rows);
+  const ct=$('cats');ct.innerHTML='';
+  cats.forEach(c=>{const tr=document.createElement('tr');if(!c.n)tr.className='zero';cell(tr,c.name);cell(tr,result.hasMulti?c.n:'–','n');ct.appendChild(tr)});
+  const st=$('sum');st.innerHTML='<tr><th>סוג מנה</th><th>רגילות</th><th>טבעוני</th><th>צליאק</th></tr>';
+  sum.forEach(s=>{const tr=document.createElement('tr');if(!(s.I+s.J+s.K))tr.className='zero';cell(tr,s.name);cell(tr,s.I,'n');cell(tr,s.J,'n');cell(tr,s.K,'n');st.appendChild(tr)});
+  const t=document.createElement('tr');t.className='tot';cell(t,'סיכום');['I','J','K'].forEach(k=>cell(t,sum.reduce((a,s)=>a+s[k],0),'n'));st.appendChild(t);
+  // rows
+  for(const r of d.rows){
+    const tr=document.createElement('tr');if(r.flag==='review'||r.flag==='other')tr.className='review';
+    cell(tr,r.po,'n');cell(tr,r.contact);cell(tr,r.phone,'n');cell(tr,r.extraName);cell(tr,r.extraPhone,'n');cell(tr,r.address,'wrap');
+    const h=cell(tr,'');if(r.h){const p=document.createElement('span');p.className='pill'+(/מצונ/.test(r.h)?' cold':'');p.textContent=r.h;h.appendChild(p)}
+    cell(tr,r.I,'n');cell(tr,r.J,'n');cell(tr,r.K,'n');cell(tr,r.I==null?'':(r.I||0)+(r.J||0)+(r.K||0),'n');
+    cell(tr,r.hh==null?'':String(r.hh).padStart(2,'0')+':'+String(r.mm).padStart(2,'0'),'n');cell(tr,r.ampm);
+    cell(tr,r.P,r.allergen?'green':'');cell(tr,r.notes,'wrap');
+    tb.appendChild(tr);
+  }
+}
+function fileName(days){
+  const f=d=>d.date?String(d.date.getDate()).padStart(2,'0')+'.'+String(d.date.getMonth()+1).padStart(2,'0'):'';
+  return 'קובץ סופי '+(days.length===1?f(days[0]):f(days[0])+'-'+f(days[days.length-1]))+'.xlsx';
+}
+/* ---- WhatsApp: send from the dashboard and keep track of who already got the message (saved in this browser) ---- */
+const WA_KEY='waSent';
+const waLoad=()=>{try{return JSON.parse(localStorage.getItem(WA_KEY)||'{}')}catch(e){return {}}};
+const waSave=m=>{try{localStorage.setItem(WA_KEY,JSON.stringify(m))}catch(e){}};
+function renderWa(){
+  const tb=$('wa-body');tb.innerHTML='';
+  const sheet=sumRes&&sumRes.sheets.find(s=>s.def.name==='אירוע צבא עם הפעלה');
+  const list=sheet?sheet.entries.map(e=>e.p):[];
+  const sent=waLoad(), link=$('link').value.trim();
+  const count=()=>{const n=list.filter(p=>sent[p.po]).length;$('wa-count').textContent=list.length?'נשלחו '+n+' מתוך '+list.length:'אין הזמנות'};
+  const fmt=t=>{const d=new Date(t);return d.getDate()+'.'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+  for(const p of list){
+    const tr=document.createElement('tr');
+    const mark=on=>{if(on)sent[p.po]=Date.now();else delete sent[p.po];waSave(sent);tr.classList.toggle('sent',!!on);cb.checked=!!on;when.textContent=on?fmt(sent[p.po]):'';count()};
+    const c0=document.createElement('td'),cb=document.createElement('input');cb.type='checkbox';cb.setAttribute('aria-label','נשלח ל-'+p.po);
+    const when=document.createElement('div');when.className='when';c0.append(cb,when);tr.appendChild(c0);
+    cb.addEventListener('change',()=>mark(cb.checked));
+    cell(tr,p.po,'n');cell(tr,p.date?p.date.getDate()+'.'+(p.date.getMonth()+1):'');cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
+    const c6=document.createElement('td'),u=waUrl(p,link);
+    if(u){const a=document.createElement('a');a.className='send';a.href=u;a.target='_blank';a.rel='noopener';a.textContent='שליחה בוואטסאפ';
+      a.addEventListener('click',()=>{a.href=waUrl(p,$('link').value.trim());mark(true)});c6.appendChild(a)}
+    else c6.textContent='אין טלפון';
+    tr.appendChild(c6);
+    if(sent[p.po]){tr.classList.add('sent');cb.checked=true;when.textContent=fmt(sent[p.po])}
+    tb.appendChild(tr);
+  }
+  count();
+}
+const XMIME='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+function summaryName(){
+  const ks=[...new Set(sumRes.sheets.flatMap(s=>s.blocks.map(b=>b.date)).filter(Boolean).map(d=>+d))].sort((a,b)=>a-b);
+  const f=t=>{const d=new Date(t);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')};
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  const stamp=p(n.getDate())+p(n.getMonth()+1)+n.getFullYear()+p(n.getHours())+p(n.getMinutes()); // DDMMYYYYHHMM of the download
+  return 'טבלת סיכום'+(ks.length?' '+(ks.length===1?f(ks[0]):f(ks[0])+'-'+f(ks[ks.length-1])):'')+' - '+stamp+'.xlsx';
+}
+// build the requested files up front, so every download starts inside the same click
+function makeFiles(kitchenToo,summaryToo){
+  const out=[];
+  if(kitchenToo){const days=result.dates.filter(d=>included.has(d.key));if(days.length)out.push({name:fileName(days),blob:new Blob([buildXlsx(days,true)],{type:XMIME})})}
+  if(summaryToo&&sumRes){
+    try{localStorage.setItem('summaryLink',$('link').value.trim())}catch(e){}
+    out.push({name:summaryName(),blob:new Blob([buildSummaryXlsx(sumRes,$('link').value.trim())],{type:XMIME})});
+  }
+  return out;
+}
+function download(kitchenToo,summaryToo){
+  const files=makeFiles(kitchenToo,summaryToo); if(!files.length)return;
+  const names=files.map(f=>f.name).join(' + ');
+  if(window.claude&&window.claude.use){
+    (async()=>{
+      let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}
+      if(!dl){anchors(files);setStatus('ירד: '+names);return}
+      const done=[];
+      for(const f of files){
+        try{await dl.save({filename:f.name,data:f.blob});done.push(f.name)}
+        catch(e){setStatus(e&&e.code==='declined'?'ההורדה בוטלה':'ההורדה לא הצליחה כאן. פתחי את הדף בדפדפן ונסי שוב.');return}
+      }
+      setStatus('נשמר: '+done.join(' + '));
+    })();
+    return;
+  }
+  anchors(files);
+  setStatus(files.length>1?'ירדו שני קבצים: '+names+'. אם הדפדפן שואל אם לאפשר הורדה של כמה קבצים, לחצי "אפשר".':'ירד: '+names);
+}
+function anchors(files){
+  files.forEach((f,i)=>setTimeout(()=>{
+    const a=document.createElement('a');a.href=URL.createObjectURL(f.blob);a.download=f.name;a.style.display='none';
+    document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},4000);
+  },i*700));
+}
+$('btn-dl').addEventListener('click',()=>download(true,false));
+$('btn-sum').addEventListener('click',()=>download(false,true));
+$('btn-both').addEventListener('click',()=>download(true,true));
+try{$('link').value=localStorage.getItem('summaryLink')||''}catch(e){}
+$('link').addEventListener('input',()=>{try{localStorage.setItem('summaryLink',$('link').value.trim())}catch(e){}});
+$('btn-reset').addEventListener('click',()=>{
+  reportRows=multiRows=result=sumRes=null;current=null;included.clear();renderSummary();
+  [['report','איש קשר, טלפון, כתובת לאספקה ותאריך (.xls)'],['multi','הפריטים והכמויות של כל פק"א (.xlsb)']].forEach(([k,h])=>{$('slot-'+k).classList.remove('ok');$('in-'+k).value='';$('hint-'+k).textContent=h});
+  $('result').hidden=true;$('notes').innerHTML='';updateButtons();
+  $('tbody').innerHTML='<tr><td colspan="15" class="empty">הטבלה תופיע כאן אחרי העלאת הקבצים</td></tr>';setStatus('');
+});
+['report','multi'].forEach(k=>{
+  const inp=$('in-'+k), slot=$('slot-'+k);
+  inp.addEventListener('change',async()=>{for(const f of [...inp.files])await handle(f)});
+  ['dragenter','dragover'].forEach(e=>slot.addEventListener(e,()=>slot.classList.add('drag')));
+  ['dragleave','drop'].forEach(e=>slot.addEventListener(e,()=>slot.classList.remove('drag')));
+});
+</script>
+</body></html>
