@@ -184,7 +184,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <li><b>טבלת סיכום · כריכים עזה:</b> בשרי במנות רגילות, טבעוני בטבעוני, חמגשיות לל"ג באותה פק"א בצליאק. כשבכתובת כתוב סוג וכמות ("50 חלה שניצל", "50 פרנה פרגית") נפתחת שורה לכל סוג.</li>
     <li><b>טבלת סיכום · חלקי מנה:</b> פק"א שיש בה ארוחה מוכנה בתפזורת לא נכנסת לגיליון, היא בקובץ החמגשיות והתפזורת. המנה העיקרית במנות, וירקנית, פחמימה וסלט בק"ג (0.09, 0.18 ו-0.18 ק"ג למנה). ארוזית בוקר, סביח, מרק, גחנון וחמין נכנסים לגיליונות שלהם לפי שם הפריט. חלקי ארוחה חמין (בשרי או טבעוני) נכנסים לגיליון חמין. חמין לל"ג או אלרגני נספר בעמודת צליאק, וסה"כ הוא חמין + טבעוני + צליאק.</li>
     <li>לכל תאריך אספקה נוצר גיליון משלו, ואחריו גיליון "נוספות" של אותו תאריך. נכנסים כל התאריכים שמופיעים בשני הקבצים. אפשר להעלות גם רק MultiReportView, כי יש בו את פרטי הפק"א.</li>
-    <li>נכנסות פק"אות בסטטוס "אושרה לביצוע" ופק"אות בסטטוס "חדשה". בפק"א חדשה כתוב בהערות "פק"א חדשה (טרם אושרה)". כשיש לפק"א גם מקורית וגם עדכון, נלקח העדכון.</li>
+    <li>נכנסות כל הפק"אות חוץ מפק"אות בסטטוס "לא פעיל" או "בוטלה" בדיביסי. בפק"א חדשה כתוב בהערות "פק"א חדשה (טרם אושרה)". כשיש לפק"א גם מקורית וגם עדכון, נלקח העדכון.</li>
     <li>תפזורת (ארוחה מוכנה בתפזורת בהפעלת יחידה): אם בכתובת כתוב מצונן, סוג המנה הוא "תפזורת- קר מצונן". מספר הטבעוניים נלקח מהכתובת, נכנס לטיבעוני ויורד מהמנות הרגילות.</li>
     <li>חמגשית כולל נלווים → "חמגשית+נלווים". חמגשית ללא נלווים → "חמגשית ללא נלווים". בשרי נספר ברגילות, טבעוני וצמחוני בטיבעוני, לל"ג בצליאק.</li>
     <li>חמגשית טבעונית לל"ג וחמגשית צמחונית לל"ג נספרות בצליאק, ובהערות למנות נכתב "X אלרגניים טבעוני" או "X אלרגניים צמחוני" בצבע ירוק.</li>
@@ -203,7 +203,7 @@ const norm=v=>clean(v).replace(/[\s.\-_:"'`׳״“”’]/g,'').replace(/יי/g,
 const K={po:norm('מס. פקייא'),st:norm('סטטוס בדיביסי'),orig:norm('פקייא: מקורית או עידכון/ביטול'),line:norm('מס. שורה'),
   contact:norm('איש קשר'),phone:norm('טלפון איש קשר'),addr:norm('כתובת לאספקה'),when:norm('תאריך ושעות אספקה מועדפים'),qty:norm('כמות')};
 const ACTIVE='אושרה לביצוע';
-const isActive=st=>/אושרה לביצוע|^חדש/.test(clean(st));
+const isActive=st=>!/לא\s*פעיל|בוטל/.test(clean(st));
 const fixPhone=v=>{if(v==null)return '';if(typeof v==='number'){const t=String(Math.round(v));return /^5\d{8}$/.test(t)?'0'+t:t}return clean(v)};
 const asId=v=>{if(typeof v==='number')return String(Math.round(v));return clean(v).replace(/\.0+$/,'')};
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
@@ -1060,7 +1060,7 @@ function renderAll(){
   if(!result.hasMulti)notes.push({c:'warn',t:'עדיין לא הועלה MultiReportView. הקובץ ייצא עם הכתובות, אנשי הקשר והשעות, אבל בלי סוג מנה וכמויות.'});
   if(reportRows&&result.fromMulti&&result.fromMulti.length)notes.push({c:'info',t:result.fromMulti.length+' פק"אות קיימות רק ב-MultiReportView ולא ב-ReportView. הפרטים שלהן (איש קשר, כתובת ושעה) נלקחו מ-MultiReportView.'});
   {const nw=result.dates.flatMap(d=>d.rows.concat(d.others)).filter(r=>r.isNew).map(r=>r.po);if(nw.length)notes.push({c:'warn',t:new Set(nw).size+' פק"אות בסטטוס "חדשה" נקלטו. בהערות שלהן כתוב "פק"א חדשה (טרם אושרה)": ',code:[...new Set(nw)].join(', ')})}
-  if(result.skipped.length)notes.push({c:'info',t:result.skipped.length+' שורות לא נכללו כי הסטטוס שלהן אינו "אושרה לביצוע" או "חדשה": ',code:result.skipped.map(s=>s.po+' ('+s.status+')').join(', ')});
+  if(result.skipped.length)notes.push({c:'info',t:result.skipped.length+' שורות לא נכללו כי הסטטוס שלהן "לא פעיל" או "בוטלה": ',code:result.skipped.map(s=>s.po+' ('+s.status+')').join(', ')});
   if(result.noItems.length)notes.push({c:'bad',t:'פק"אות פעילות שאין להן פריטים ב-MultiReportView (מסומנות בצהוב): ',code:result.noItems.join(', ')});
   if(result.missingInReport.length)notes.push({c:'warn',t:'פק"אות שיש ב-MultiReportView אבל לא ב-ReportView, ולכן לא נכנסו: ',code:result.missingInReport.join(', ')});
   if(result.review.length)notes.push({c:'warn',t:'פריטים שלא זוהה להם סוג מנה. בעמודת סוג מנה נרשם תיאור הפריט הארוך והשורה מסומנת בצהוב:',list:result.review.map(r=>r.po+' · '+r.desc)});
