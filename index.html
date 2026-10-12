@@ -169,7 +169,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים</h2><span class="status" id="wa-count"></span></div>
-      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
+      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
     <h2 class="sec">חמגשיות ותפזורת</h2>
     <div class="stats" id="stats"></div>
@@ -1219,7 +1219,8 @@ function renderWa(){
   const tb=$('wa-body');tb.innerHTML='';
   const list=sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה'||s.def.name==='אירועים ללא הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[];
   const sent=waLoad(), link=$('link').value.trim();
-  const count=()=>{const n=list.filter(p=>sent[p.po]).length;$('wa-count').textContent=list.length?'נשלחו '+n+' מתוך '+list.length:'אין הזמנות'};
+  let keeps=true;try{localStorage.setItem('waTest','1');keeps=localStorage.getItem('waTest')==='1';localStorage.removeItem('waTest')}catch(e){keeps=false}
+  const count=()=>{const n=list.filter(p=>sent[p.po]).length;$('wa-count').textContent=(list.length?'נשלחו '+n+' מתוך '+list.length:'אין הזמנות')+(keeps?'':' · הדפדפן הזה לא שומר את הסימונים (חלון גלישה בסתר או תצוגה מקדימה). פתחי את הקישור בחלון רגיל.')};
   const fmt=t=>{const d=new Date(t);return d.getDate()+'.'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
   for(const p of list){
     const tr=document.createElement('tr');
@@ -1229,7 +1230,7 @@ function renderWa(){
     cb.addEventListener('change',()=>mark(cb.checked));
     cell(tr,p.po,'n');cell(tr,p.date?p.date.getDate()+'.'+(p.date.getMonth()+1):'');
     {const ty=waType(p);const c=cell(tr,ty||'לא זוהה, נשלח: אירוע מבושל עם הפעלה חד"פ');if(!ty)c.className='unk'}
-    cell(tr,waDiners(p),'n');cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
+    cell(tr,waDiners(p),'n');{const c=cell(tr,p.status||'');if(/^חדש/.test(p.status||''))c.className='unk'}cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
     const c6=document.createElement('td'),u=waUrl(p,link);
     if(u){const a=document.createElement('a');a.className='send';a.href=u;a.target='_blank';a.rel='noopener';a.textContent='שליחה בוואטסאפ';
       a.addEventListener('click',()=>{a.href=waUrl(p,$('link').value.trim());mark(true)});c6.appendChild(a)}
