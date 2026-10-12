@@ -145,8 +145,8 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
 
   <div class="field">
     <label for="link">קישור למילוי באתר (נכנס להודעת הוואטסאפ בטבלת הסיכום)</label>
-    <input type="url" id="link" dir="ltr" placeholder="https://">
-    <small>הקישור נכנס להודעה בזמן ההורדה, אז מדביקים אותו כאן לפני שמורידים. הוא נשמר לפעם הבאה.</small>
+    <input type="url" id="link" dir="ltr" placeholder="https://catering.li-bar.co.il/front/location/5">
+    <small>אם השדה ריק, נכנס הקישור לתפריט של לי בר (catering.li-bar.co.il). קישור אחר שמדביקים כאן מחליף אותו ונשמר לפעם הבאה.</small>
   </div>
 
   <div class="bar">
@@ -728,9 +728,10 @@ const SHEETS=[
       if(m)m.h=txt;else G.push({q:'',g:'',h:txt});
     }
     if(!G.length)G.push({q:'',g:'',h:''});
+    p.diners=qsum(main)+qsum(extra)||'';
     const notes=[p.extraPhone?'איש קשר נוסף: '+[p.extraName,p.extraPhone].filter(Boolean).join(' '):'',p.notes].filter(Boolean).join(' | ');
     return G.map((x,k)=>[
-      C(p.po,'n'),C(dateVal(p),'d'),C(k||!p.eat?'':(p.eat.hh*60+p.eat.mm)/1440,'h'),C(p.address,'w'),
+      C(p.po,'n'),C(dateVal(p),'d'),C(k?'':p.eat?(p.eat.hh*60+p.eat.mm)/1440:timeVal(p),'h'),C(p.address,'w'),
       C(k?'':(main.length?main.map(i=>i.desc||'(ללא תיאור)').join(' + '):'עמדות'),'w'),C(k?'':orBlank(qsum(main)),'n'),C(k?'':orBlank(qsum(extra)),'n'),
       C(x.q,'n'),C(x.g,'w'),C(x.h,'w'),C('','g'),C(k?'':p.contact),C(k?'':p.phone),C(k?'':p,'k'),C(k?'':notes,'w')]);
   }},
@@ -894,13 +895,47 @@ function cx(ref,v,s,f){
 const LINK_CELL='S1';
 // WhatsApp link written as a real hyperlink: Excel's HYPERLINK() formula stops at 255 characters,
 // and the encoded Hebrew message is much longer than that
-function waUrl(p,link){
+const MENU_LINK='https://catering.li-bar.co.il/front/location/5';
+const hhmm=(h,m)=>h==null?'':String(h).padStart(2,'0')+':'+String(m||0).padStart(2,'0');
+function waText(p,link){
+  const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
+  return ['שלום,',
+'מדברים משירות הלקוחות של לי בר',
+'נכנסה לך פק"א '+p.po,
+'לטובת אירוע מבושל עם הפעלה - חד"פ',
+'',
+'עבור כמות סועדים: '+(p.diners||''),
+'לתאריך: '+dt,
+'לשעה: '+hhmm(p.hh,p.mm),
+'מיקום: '+(p.address||''),
+'',
+'על מנת שנוכל להתקדם עם ההזמנה, יש למלא את התפריט בקישור הבא:',
+'🔗'+(link||MENU_LINK),
+'',
+'',
+'יש לבחור תחילה תאריך אספקה ע"פ הפק"א',
+'יש לבחור את כל המנות הרצויות, כולל מנות טבעוניות.',
+'',
+'בסיום מילוי התפריט חובה ללחוץ על "לתשלום" כדי שההזמנה תיקלט ותישלח אליי.',
+'',
+'*⚠️ חשוב: אם במהלך התהליך האתר מחזיר אתכם להתחלה - אין צורך למלא את התפריט מחדש!*',
+'התפריט כבר נשמר. יש להיכנס שוב לתהליך וללחוץ רק על "לתשלום" כדי שההזמנה תישלח אלינו.',
+'',
+'*⚠️ אם לא לוחצים על "לתשלום", ההזמנה לא נקלטת במערכת ואני לא מקבלת אותה.*',
+'*לאחר הלחיצה על "לתשלום", נא לעדכן אותי שההזמנה מולאה ונשלחה.*',
+'',
+'שימו לב: אין צורך לבצע תשלום בפועל - הלחיצה על "לתשלום" היא השלב שמסיים ושולח את ההזמנה אלינו.',
+'אני זמינה לכל שאלה או התלבטות 🙏'].join('\n');
+}
+// in the Excel file Hebrew stays unencoded (only spaces and URL symbols are escaped): Excel refuses
+// hyperlinks longer than about 2,000 characters, and a fully encoded Hebrew message is several times longer
+function waUrl(p,link,forExcel){
   let d=String(p.phone||'').replace(/\D/g,'');
   if(!d)return '';
   if(d.startsWith('0'))d='972'+d.slice(1);else if(!d.startsWith('972'))d='972'+d;
-  const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
-  const msg=['שלום,','מדברת עדן מלי בר','נכנסה לך פקא מספר: '+p.po,'לתאריך: '+dt,'כתובת לאספקה: '+p.address,link||'','','נשמח שתמלא בהקדם את התפריט ותשיב לנו בהודעה חוזרת שמילאת.'].join('\n');
-  return 'https://wa.me/'+d+'?text='+encodeURIComponent(msg);
+  const msg=waText(p,link);
+  const enc=forExcel?msg.replace(/[\s%&#?+"'<>\\^`{|}]/g,c=>encodeURIComponent(c)):encodeURIComponent(msg);
+  return 'https://wa.me/'+d+'?text='+enc;
 }
 function sheetXml(s,SB,link){
   const d=s.def, last=d.head.length-1, lastCol=colL(last), X=[], merges=[]; s.links=[];
@@ -925,7 +960,7 @@ function sheetXml(s,SB,link){
           const sty=c.t==='d'?SB.st(0,y,164,'c'):c.t==='h'?SB.st(0,y,165,'c'):c.t==='n'?SB.st(0,y,0,'c'):c.t==='w'?SB.st(0,y,0,'w'):c.t==='g'?SB.st(0,'F2F2F2',0,''):c.t==='k'?SB.st(3,y,0,'c'):SB.st(0,y,0,'');
           if(typeof c.v==='string'&&c.v.startsWith('sum:')){const [,a,b]=c.v.split(':');return cx(ref,'',sty,`IF(COUNT(${a}${n}:${b}${n})=0,"",SUM(${a}${n}:${b}${n}))`)}
           if(c.v==='sumIJK')return cx(ref,'',sty,`IF(COUNT(I${n}:K${n})=0,"",SUM(I${n}:K${n}))`);
-          if(c.t==='k'){const u=c.v?waUrl(c.v,link):'';if(!u)return cx(ref,'',sty);s.links.push({ref,url:u});return cx(ref,'שליחה בוואטסאפ',sty)}
+          if(c.t==='k'){const u=c.v?waUrl(c.v,link,true):'';if(!u)return cx(ref,'',sty);s.links.push({ref,url:u});return cx(ref,'שליחה בוואטסאפ',sty)}
           if(c.f)return cx(ref,c.v,sty,c.f);
           return cx(ref,typeof c.v==='string'&&c.t==='n'&&/^\d+$/.test(c.v)?Number(c.v):c.v,sty);
         });
