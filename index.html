@@ -910,6 +910,11 @@ function waType(p){
   if(/אירוע/.test(t)&&/בהפעלת/.test(t))return 'אירוע מבושל בהפעלת יחידה';
   if(/מזנון/.test(t)&&/חרס|זכוכית|במבוק/.test(t))return 'אירוע מבושל עם הפעלה כלי חרס/במבוק';
   if(/אירוע\s*ב?מזנון/.test(t)&&/הגשה עצמית/.test(t))return 'אירוע מבושל עם הפעלה חד"פ';
+  if(/כיבוד עשיר/.test(t))return 'כיבוד עשיר עם הפעלה';
+  if(/עמדות שף/.test(t))return 'אירוע פרימיום במזנון ועמדות שף';
+  // stands only: name the stands that were ordered
+  const st=(p.items||[]).filter(i=>RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
+  if(!t&&st.length)return 'אירוע עמדות: '+st.map(i=>(i.qty>1?i.qty+' ':'')+i.desc).join(', ');
   return '';
 }
 // diners = the PO's quantity: every item except the stands themselves
@@ -921,7 +926,7 @@ function waText(p,link){
 'נכנסה לך פק"א '+p.po,
 'לטובת '+(waType(p)||'אירוע מבושל עם הפעלה חד"פ'),
 '',
-'עבור כמות סועדים: '+waDiners(p),
+...(waDiners(p)?['עבור כמות סועדים: '+waDiners(p)]:[]),
 'לתאריך: '+dt,
 'לשעה: '+hhmm(p.hh,p.mm),
 'מיקום: '+(p.address||''),
