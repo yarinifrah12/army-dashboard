@@ -42,6 +42,9 @@ header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .slot .name{font-family:var(--f-display);font-weight:500;font-size:1.1rem}
 .slot .hint{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
 .slot.ok .hint{color:var(--fg)}
+.slot .remove{display:none;position:absolute;top:10px;left:10px;z-index:2;font:inherit;font-size:.88rem;font-weight:600;color:var(--bad);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 12px;cursor:pointer}
+.slot .remove:hover{background:var(--bad-soft);border-color:var(--bad)}
+.slot.ok .remove{display:block}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 button{font:inherit;font-weight:700;border-radius:8px;padding:10px 18px;cursor:pointer;border:1.5px solid var(--accent)}
 button.primary{background:var(--accent);color:var(--on-accent)}
@@ -106,6 +109,7 @@ table.main{border-collapse:collapse;width:100%;font-size:.9rem}
 .field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .field small{color:var(--muted)}
 table.wa{border-collapse:collapse;width:100%;font-size:.92rem}
+table.wa td.unk{color:var(--warn);background:var(--warn-soft)}
 .wa th,.wa td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);vertical-align:middle}
 .wa th{color:var(--muted);font-weight:600;font-size:.82rem;position:sticky;top:0;background:var(--surface)}
 .wa tr.sent td{background:var(--green-row)}
@@ -133,12 +137,14 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <input type="file" id="in-report" accept=".xls,.xlsx,.xlsb,.html,.htm" multiple>
       <span class="tag">1 · רשימת פק"אות</span>
       <span class="name">ReportView</span>
+      <button type="button" class="remove" id="rm-report" aria-label="הסרת הקובץ">✕ הסרה</button>
       <span class="hint" id="hint-report">איש קשר, טלפון, כתובת לאספקה ותאריך (.xls)</span>
     </label>
     <label class="slot" id="slot-multi">
       <input type="file" id="in-multi" accept=".xlsb,.xlsx,.xls,.html,.htm" multiple>
       <span class="tag">2 · דאטה מורחב</span>
       <span class="name">MultiReportView</span>
+      <button type="button" class="remove" id="rm-multi" aria-label="הסרת הקובץ">✕ הסרה</button>
       <span class="hint" id="hint-multi">הפריטים והכמויות של כל פק"א (.xlsb)</span>
     </label>
   </section>
@@ -162,8 +168,8 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירוע צבא עם הפעלה</h2><span class="status" id="wa-count"></span></div>
-      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים</h2><span class="status" id="wa-count"></span></div>
+      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
     <h2 class="sec">חמגשיות ותפזורת</h2>
     <div class="stats" id="stats"></div>
@@ -728,7 +734,6 @@ const SHEETS=[
       if(m)m.h=txt;else G.push({q:'',g:'',h:txt});
     }
     if(!G.length)G.push({q:'',g:'',h:''});
-    p.diners=qsum(main)+qsum(extra)||'';
     const notes=[p.extraPhone?'איש קשר נוסף: '+[p.extraName,p.extraPhone].filter(Boolean).join(' '):'',p.notes].filter(Boolean).join(' | ');
     return G.map((x,k)=>[
       C(p.po,'n'),C(dateVal(p),'d'),C(k?'':p.eat?(p.eat.hh*60+p.eat.mm)/1440:timeVal(p),'h'),C(p.address,'w'),
@@ -897,14 +902,26 @@ const LINK_CELL='S1';
 // and the encoded Hebrew message is much longer than that
 const MENU_LINK='https://catering.li-bar.co.il/front/location/5';
 const hhmm=(h,m)=>h==null?'':String(h).padStart(2,'0')+':'+String(m||0).padStart(2,'0');
+// which event the message names, from the long item description (yarin's rules, in priority order)
+function waType(p){
+  const t=(p.items||[]).filter(i=>!RX.stand.test(i.desc)).map(i=>i.desc).join(' | ');
+  if(/על האש/.test(t))return 'אירוע על האש עם הפעלה חד"פ';
+  if(/כיבוד/.test(t)&&/בהפעלת/.test(t))return 'כיבוד בהפעלת יחידה חד"פ';
+  if(/אירוע/.test(t)&&/בהפעלת/.test(t))return 'אירוע מבושל בהפעלת יחידה';
+  if(/מזנון/.test(t)&&/חרס|זכוכית|במבוק/.test(t))return 'אירוע מבושל עם הפעלה כלי חרס/במבוק';
+  if(/אירוע\s*ב?מזנון/.test(t)&&/הגשה עצמית/.test(t))return 'אירוע מבושל עם הפעלה חד"פ';
+  return '';
+}
+// diners = the PO's quantity: every item except the stands themselves
+const waDiners=p=>qsum((p.items||[]).filter(i=>!RX.stand.test(i.desc)))||'';
 function waText(p,link){
   const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
   return ['שלום,',
 'מדברים משירות הלקוחות של לי בר',
 'נכנסה לך פק"א '+p.po,
-'לטובת אירוע מבושל עם הפעלה - חד"פ',
+'לטובת '+(waType(p)||'אירוע מבושל עם הפעלה חד"פ'),
 '',
-'עבור כמות סועדים: '+(p.diners||''),
+'עבור כמות סועדים: '+waDiners(p),
 'לתאריך: '+dt,
 'לשעה: '+hhmm(p.hh,p.mm),
 'מיקום: '+(p.address||''),
@@ -1189,8 +1206,7 @@ const waLoad=()=>{try{return JSON.parse(localStorage.getItem(WA_KEY)||'{}')}catc
 const waSave=m=>{try{localStorage.setItem(WA_KEY,JSON.stringify(m))}catch(e){}};
 function renderWa(){
   const tb=$('wa-body');tb.innerHTML='';
-  const sheet=sumRes&&sumRes.sheets.find(s=>s.def.name==='אירוע צבא עם הפעלה');
-  const list=sheet?sheet.entries.map(e=>e.p):[];
+  const list=sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה'||s.def.name==='אירועים ללא הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[];
   const sent=waLoad(), link=$('link').value.trim();
   const count=()=>{const n=list.filter(p=>sent[p.po]).length;$('wa-count').textContent=list.length?'נשלחו '+n+' מתוך '+list.length:'אין הזמנות'};
   const fmt=t=>{const d=new Date(t);return d.getDate()+'.'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
@@ -1200,7 +1216,9 @@ function renderWa(){
     const c0=document.createElement('td'),cb=document.createElement('input');cb.type='checkbox';cb.setAttribute('aria-label','נשלח ל-'+p.po);
     const when=document.createElement('div');when.className='when';c0.append(cb,when);tr.appendChild(c0);
     cb.addEventListener('change',()=>mark(cb.checked));
-    cell(tr,p.po,'n');cell(tr,p.date?p.date.getDate()+'.'+(p.date.getMonth()+1):'');cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
+    cell(tr,p.po,'n');cell(tr,p.date?p.date.getDate()+'.'+(p.date.getMonth()+1):'');
+    {const ty=waType(p);const c=cell(tr,ty||'לא זוהה, נשלח: אירוע מבושל עם הפעלה חד"פ');if(!ty)c.className='unk'}
+    cell(tr,waDiners(p),'n');cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
     const c6=document.createElement('td'),u=waUrl(p,link);
     if(u){const a=document.createElement('a');a.className='send';a.href=u;a.target='_blank';a.rel='noopener';a.textContent='שליחה בוואטסאפ';
       a.addEventListener('click',()=>{a.href=waUrl(p,$('link').value.trim());mark(true)});c6.appendChild(a)}
@@ -1265,8 +1283,17 @@ $('btn-reset').addEventListener('click',()=>{
   $('result').hidden=true;$('notes').innerHTML='';updateButtons();
   $('tbody').innerHTML='<tr><td colspan="15" class="empty">הטבלה תופיע כאן אחרי העלאת הקבצים</td></tr>';setStatus('');
 });
+const HINTS={report:'איש קשר, טלפון, כתובת לאספקה ותאריך (.xls)',multi:'הפריטים והכמויות של כל פק"א (.xlsb)'};
 ['report','multi'].forEach(k=>{
   const inp=$('in-'+k), slot=$('slot-'+k);
+  // remove only this file; the other one stays and the results are rebuilt from it
+  $('rm-'+k).addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(k==='report')reportRows=null;else multiRows=null;
+    slot.classList.remove('ok');inp.value='';$('hint-'+k).textContent=HINTS[k];
+    if(!reportRows&&!multiRows){$('btn-reset').click();return}
+    $('notes').innerHTML='';run();
+  });
   inp.addEventListener('change',async()=>{for(const f of [...inp.files])await handle(f)});
   ['dragenter','dragover'].forEach(e=>slot.addEventListener(e,()=>slot.classList.add('drag')));
   ['dragleave','drop'].forEach(e=>slot.addEventListener(e,()=>slot.classList.remove('drag')));
