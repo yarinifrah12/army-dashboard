@@ -914,7 +914,13 @@ function waType(p){
   if(/עמדות שף/.test(t))return 'אירוע פרימיום במזנון ועמדות שף';
   // stands only: name the stands that were ordered
   const st=(p.items||[]).filter(i=>RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
-  if(!t&&st.length)return 'אירוע עמדות: '+st.map(i=>(i.qty>1?i.qty+' ':'')+i.desc).join(', ');
+  // barista: "<qty> עמדת בריסטה <qty×200 + added portions> מנות" (yarin's rule)
+  const add=(p.items||[]).filter(i=>RX.stand.test(i.desc)&&RX.addon.test(i.desc));
+  const stTxt=i=>{
+    if(/בריסטה|שתייה חמה/.test(i.desc)){const extra=qsum(add.filter(a=>/בריסטה|שתייה חמה/.test(a.desc)));return i.qty+' עמדת בריסטה '+(i.qty*200+extra)+' מנות'}
+    return (i.qty>1?i.qty+' ':'')+i.desc;
+  };
+  if(!t&&st.length)return 'אירוע עמדות: '+st.map(stTxt).join(', ');
   return '';
 }
 // diners = the PO's quantity: every item except the stands themselves
