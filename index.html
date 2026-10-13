@@ -1297,6 +1297,8 @@ function renderWa(){
   const tb=$('wa-body');tb.innerHTML='';
   const withOps=new Set(sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[]);
   const list=sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה'||s.def.name==='אירועים ללא הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[];
+  // new POs (DBC status חדשה) first, the rest keep their order (yarin)
+  list.sort((a,b)=>(/^חדש/.test(b.status||'')?1:0)-(/^חדש/.test(a.status||'')?1:0));
   const sent=waLoad(), ans=ansLoad(), link=$('link').value.trim();
   let keeps=true;try{localStorage.setItem('waTest','1');keeps=localStorage.getItem('waTest')==='1';localStorage.removeItem('waTest')}catch(e){keeps=false}
   const count=()=>{const n=list.filter(p=>sent[p.po]).length;const y=list.filter(p=>ans[p.po]==='כן').length,no=list.filter(p=>ans[p.po]==='לא').length;$('wa-count').textContent=(list.length?'נשלחו '+n+' מתוך '+list.length+' · ענו: '+y+' · לא ענו: '+no:'אין הזמנות')+(keeps?'':' · הדפדפן הזה לא שומר את הסימונים (חלון גלישה בסתר או תצוגה מקדימה). פתחי את הקישור בחלון רגיל.')};
