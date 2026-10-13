@@ -912,21 +912,42 @@ function waType(p){
   if(/אירוע\s*ב?מזנון/.test(t)&&/הגשה עצמית/.test(t))return 'אירוע מבושל עם הפעלה חד"פ';
   if(/כיבוד עשיר/.test(t))return 'כיבוד עשיר עם הפעלה';
   if(/עמדות שף/.test(t))return 'אירוע פרימיום במזנון ועמדות שף';
-  // stands only: name the stands that were ordered
-  const st=(p.items||[]).filter(i=>RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
-  // barista: "<qty> עמדת בריסטה <qty×200 + added portions> מנות" (yarin's rule)
-  const add=(p.items||[]).filter(i=>RX.stand.test(i.desc)&&RX.addon.test(i.desc));
-  const stTxt=i=>{
-    if(/בריסטה|שתייה חמה/.test(i.desc)){const extra=qsum(add.filter(a=>/בריסטה|שתייה חמה/.test(a.desc)));return i.qty+' עמדת בריסטה '+(i.qty*200+extra)+' מנות'}
-    return (i.qty>1?i.qty+' ':'')+i.desc;
-  };
-  if(!t&&st.length)return 'אירוע עמדות: '+st.map(stTxt).join(', ');
+  if(!t&&(p.items||[]).some(i=>RX.stand.test(i.desc)))return 'אירוע עמדות';
   return '';
 }
 // diners = the PO's quantity: every item except the stands themselves
 const waDiners=p=>qsum((p.items||[]).filter(i=>!RX.stand.test(i.desc)))||'';
+// stands-only POs get their own message (yarin's format): one line per stand, every stand = 200 portions;
+// a stand with an added-portions line is written without the 200 and the addition follows on its own line
+const isBarista=d=>/בריסטה|שתייה חמה/.test(d);
+const standKey=d=>d.replace(/^תוספת\s*(?:מנה\s*)?(?:ל)?דוכן\s*/,'').trim();
+function standLines(p){
+  const its=p.items||[];
+  const st=its.filter(i=>RX.stand.test(i.desc)&&!RX.addon.test(i.desc));
+  const adds=its.filter(i=>RX.stand.test(i.desc)&&RX.addon.test(i.desc)), used=new Set(), out=[];
+  for(const i of st){
+    const name=isBarista(i.desc)?'עמדת בריסטה':i.desc.replace(/\s*,\s*/g,' ').replace(/\s+/g,' ').trim();
+    const mine=adds.filter(a=>!used.has(a)&&(i.desc.includes(standKey(a.desc))||standKey(a.desc).includes(i.desc.replace(/^דוכן\s*/,''))));
+    if(!mine.length){out.push(i.qty+' '+name+' = '+i.qty*200+' מנות');continue}
+    out.push(i.qty+' '+name);
+    for(const a of mine){used.add(a);out.push(a.qty+(isBarista(i.desc)?' תוספת כוסות':' תוספת מנות'))}
+  }
+  for(const a of adds)if(!used.has(a))out.push(a.qty+' '+a.desc);
+  return out;
+}
 function waText(p,link){
   const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
+  if(waType(p)==='אירוע עמדות')return ['שלום,',
+'מדברים משירות הלקוחות של לי בר',
+'נכנסה לך פק"א '+p.po,
+'לתאריך: '+dt,
+'לשעה: '+hhmm(p.hh,p.mm),
+'מיקום: '+(p.address||''),
+'לטובת:',
+...standLines(p),
+'',
+'נא לאשר את הפרטים.',
+'ללא אישור לא נוכל לאשר את הפק"א'].join('\n');
   return ['שלום,',
 'מדברים משירות הלקוחות של לי בר',
 'נכנסה לך פק"א '+p.po,
