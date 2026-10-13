@@ -936,8 +936,9 @@ function standLines(p){
   return out;
 }
 function waText(p,link){
+  const hello=p.contact?'שלום '+clean(p.contact)+',':'שלום,';
   const dt=p.date?String(p.date.getDate()).padStart(2,'0')+'/'+String(p.date.getMonth()+1).padStart(2,'0')+'/'+p.date.getFullYear():'';
-  if(waType(p)==='אירוע עמדות')return ['שלום,',
+  if(waType(p)==='אירוע עמדות')return [hello,
 'מדברים משירות הלקוחות של לי בר',
 'נכנסה לך פק"א '+p.po,
 'לתאריך: '+dt,
@@ -948,7 +949,7 @@ function waText(p,link){
 '',
 'נא לאשר את הפרטים.',
 'ללא אישור לא נוכל לאשר את הפק"א'].join('\n');
-  return ['שלום,',
+  return [hello,
 'מדברים משירות הלקוחות של לי בר',
 'נכנסה לך פק"א '+p.po,
 'לטובת '+(waType(p)||'אירוע מבושל עם הפעלה חד"פ'),
