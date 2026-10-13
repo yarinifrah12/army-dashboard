@@ -118,6 +118,12 @@ table.wa td.unk{color:var(--warn);background:var(--warn-soft)}
 .wa a.send:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .wa .when{color:var(--muted);font-size:.82rem;white-space:nowrap}
 .wa input{width:18px;height:18px;accent-color:#1e8e3e}
+.wa .ans{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.wa .ans button{font:inherit;font-size:.85rem;font-weight:600;border:0;background:var(--surface);color:var(--muted);padding:4px 10px;cursor:pointer}
+.wa .ans button+button{border-inline-start:1.5px solid var(--line)}
+.wa .ans button.yes[aria-pressed="true"]{background:#1e8e3e;color:#fff}
+.wa .ans button.no[aria-pressed="true"]{background:#c5221f;color:#fff}
+.wa .ans button:focus-visible{outline:2px solid var(--fg);outline-offset:-2px}
 .wa-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
 h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px 0 0}
 </style>
@@ -169,7 +175,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים</h2><span class="status" id="wa-count"></span></div>
-      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
+      <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
     <h2 class="sec">חמגשיות ותפזורת</h2>
     <div class="stats" id="stats"></div>
@@ -1258,12 +1264,15 @@ function fileName(days){
 const WA_KEY='waSent';
 const waLoad=()=>{try{return JSON.parse(localStorage.getItem(WA_KEY)||'{}')}catch(e){return {}}};
 const waSave=m=>{try{localStorage.setItem(WA_KEY,JSON.stringify(m))}catch(e){}};
+const ANS_KEY='waAnswered'; // {po:'כן'|'לא'}
+const ansLoad=()=>{try{return JSON.parse(localStorage.getItem(ANS_KEY)||'{}')}catch(e){return {}}};
+const ansSave=m=>{try{localStorage.setItem(ANS_KEY,JSON.stringify(m))}catch(e){}};
 function renderWa(){
   const tb=$('wa-body');tb.innerHTML='';
   const list=sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה'||s.def.name==='אירועים ללא הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[];
-  const sent=waLoad(), link=$('link').value.trim();
+  const sent=waLoad(), ans=ansLoad(), link=$('link').value.trim();
   let keeps=true;try{localStorage.setItem('waTest','1');keeps=localStorage.getItem('waTest')==='1';localStorage.removeItem('waTest')}catch(e){keeps=false}
-  const count=()=>{const n=list.filter(p=>sent[p.po]).length;$('wa-count').textContent=(list.length?'נשלחו '+n+' מתוך '+list.length:'אין הזמנות')+(keeps?'':' · הדפדפן הזה לא שומר את הסימונים (חלון גלישה בסתר או תצוגה מקדימה). פתחי את הקישור בחלון רגיל.')};
+  const count=()=>{const n=list.filter(p=>sent[p.po]).length;const y=list.filter(p=>ans[p.po]==='כן').length,no=list.filter(p=>ans[p.po]==='לא').length;$('wa-count').textContent=(list.length?'נשלחו '+n+' מתוך '+list.length+' · ענו: '+y+' · לא ענו: '+no:'אין הזמנות')+(keeps?'':' · הדפדפן הזה לא שומר את הסימונים (חלון גלישה בסתר או תצוגה מקדימה). פתחי את הקישור בחלון רגיל.')};
   const fmt=t=>{const d=new Date(t);return d.getDate()+'.'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
   for(const p of list){
     const tr=document.createElement('tr');
@@ -1271,6 +1280,10 @@ function renderWa(){
     const c0=document.createElement('td'),cb=document.createElement('input');cb.type='checkbox';cb.setAttribute('aria-label','נשלח ל-'+p.po);
     const when=document.createElement('div');when.className='when';c0.append(cb,when);tr.appendChild(c0);
     cb.addEventListener('change',()=>mark(cb.checked));
+    {const td=document.createElement('td'),g=document.createElement('div');g.className='ans';g.setAttribute('role','group');g.setAttribute('aria-label','הלקוח ענה? '+p.po);
+      const bs=[['כן','yes'],['לא','no']].map(([v,k])=>{const b=document.createElement('button');b.type='button';b.className=k;b.textContent=v;b.setAttribute('aria-pressed',ans[p.po]===v?'true':'false');
+        b.addEventListener('click',()=>{if(ans[p.po]===v)delete ans[p.po];else ans[p.po]=v;ansSave(ans);bs.forEach(x=>x.setAttribute('aria-pressed',ans[p.po]===x.textContent?'true':'false'));count()});return b});
+      g.append(...bs);td.appendChild(g);tr.appendChild(td)}
     cell(tr,p.po,'n');cell(tr,p.date?p.date.getDate()+'.'+(p.date.getMonth()+1):'');
     {const ty=waType(p);const c=cell(tr,ty||'לא זוהה, נשלח: אירוע מבושל עם הפעלה חד"פ');if(!ty)c.className='unk'}
     cell(tr,waDiners(p),'n');{const c=cell(tr,p.status||'');if(/^חדש/.test(p.status||''))c.className='unk'}cell(tr,p.address);cell(tr,p.contact);cell(tr,p.phone,'n');
