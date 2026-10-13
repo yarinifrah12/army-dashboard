@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 13.10 שתייה-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 13.10 שתייה-3</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -974,7 +974,7 @@ function waText(p,link){
 '',
 'לתשומת ליבכם: הכיבוד הינו פרווה.',
 'שאלה להיערכות:',
-'האם נדרשת אספקת שולחנות ומיחם לטובת האירוע?',
+'*האם נדרשת אספקת שולחנות ומיחם לטובת האירוע?*',
 'נודה לאישורכם לתפריט ולהזמנה, לצורך השלמת ההיערכות ואישור הפק"א.',
 'תודה רבה!'].join('\n');
   if(waType(p)==='אירוע עמדות')return [hello,
