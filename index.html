@@ -1275,8 +1275,11 @@ const HE_DAYS=['ראשון','שני','שלישי','רביעי','חמישי','ש�
 function coverDoc(p,withOps){
   const its=(p.items||[]).filter(i=>!RX.stand.test(i.desc)), adds=its.filter(i=>RX.addon.test(i.desc));
   const main=qsum(its.filter(i=>!RX.addon.test(i.desc)))||qsum(its);
-  const tot=Math.round(main/3),water=Math.round(tot*0.3),d=p.date,pad=x=>String(x).padStart(2,'0');
-  const v={TOT:tot,WATER:water,MIX:tot-water,ADDR:clean(p.address),OPS:withOps?' - בתפעול ______________':' - ללא תפעול',
+  // drinks (yarin): buffet (מזנון) events = water qty/5 + mixed qty/3; otherwise total qty/3 of which 30% large water
+  const buffet=its.some(i=>/מזנון/.test(i.desc));
+  const water=buffet?Math.round(main/5):Math.round(Math.round(main/3)*0.3), mix=buffet?Math.round(main/3):Math.round(main/3)-water, tot=water+mix;
+  const d=p.date,pad=x=>String(x).padStart(2,'0');
+  const v={TOT:tot,WATER:water,MIX:mix,ADDR:clean(p.address),OPS:withOps?' - בתפעול ______________':' - ללא תפעול',
     DATE:d?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():'',DAY:d?HE_DAYS[d.getDay()]:'',
     OUT:p.hh==null?'':hhmm((p.hh+20)%24,p.mm),TIME:hhmm(p.hh,p.mm),TYPE:waType(p)||'אירוע מבושל עם הפעלה חד"פ',
     DINERS:main,DINX:' איש'+adds.map(a=>' + תוספת '+a.qty+(/עיקרית/.test(a.desc)?' עיקרית':'')).join(''),
