@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 13.10 שתייה-3</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 14.10-2</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -929,7 +929,9 @@ function waType(p){
   return '';
 }
 // diners = the PO's quantity: every item except the stands themselves
-const waDiners=p=>qsum((p.items||[]).filter(i=>!RX.stand.test(i.desc)))||'';
+// diners = the event quantity only; add-ons ("תוספת מנה עיקרית") are written after it, not added in (yarin 2026-10-14)
+const waDiners=p=>{const its=(p.items||[]).filter(i=>!RX.stand.test(i.desc));return qsum(its.filter(i=>!RX.addon.test(i.desc)))||qsum(its)||''};
+const waAdds=p=>(p.items||[]).filter(i=>!RX.stand.test(i.desc)&&RX.addon.test(i.desc)).map(a=>' + תוספת '+a.qty+(/עיקרית/.test(a.desc)?' עיקרית':'')).join('');
 // stands-only POs get their own message (yarin's format): one line per stand, every stand = 200 portions;
 // a stand with an added-portions line is written without the 200 and the addition follows on its own line
 const isBarista=d=>/בריסטה|שתייה חמה/.test(d);
@@ -956,7 +958,7 @@ function waText(p,link){
 'נכנסה לך פק"א '+p.po,
 'לטובת '+waType(p),
 '',
-...(waDiners(p)?['עבור כמות סועדים: '+waDiners(p)]:[]),
+...(waDiners(p)?['עבור כמות סועדים: '+waDiners(p)+waAdds(p)]:[]),
 'לתאריך: '+dt,
 'לשעה: '+hhmm(p.hh,p.mm),
 'מיקום: '+(p.address||''),
@@ -993,7 +995,7 @@ function waText(p,link){
 'נכנסה לך פק"א '+p.po,
 'לטובת '+(waType(p)||'אירוע מבושל עם הפעלה חד"פ'),
 '',
-...(waDiners(p)?['עבור כמות סועדים: '+waDiners(p)]:[]),
+...(waDiners(p)?['עבור כמות סועדים: '+waDiners(p)+waAdds(p)]:[]),
 'לתאריך: '+dt,
 'לשעה: '+hhmm(p.hh,p.mm),
 'מיקום: '+(p.address||''),
