@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10-4</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10-5</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -546,17 +546,25 @@ function cellXml(ref,v,st,f){
   if(typeof v==='number')return `<c r="${ref}" s="${st}"><v>${v}</v></c>`;
   return `<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
 }
-function dateSheetXml(day){
+function dateSheetXml(day,ex){
   const rows=day.rows, first=13, last=Math.max(first,first+rows.length-1), R=`$13:$`;
   const rng=c=>`$${c}$13:$${c}$${last}`;
   const X=[]; const row=(n,cells,ht)=>X.push(`<row r="${n}"${ht?` ht="${ht}" customHeight="1"`:''}>${cells.join('')}</row>`);
   const sum=summary(rows), cats=catCounts(day.pos||[]);
+  // PO counts per category as formulas (yarin): trays/bulk = distinct POs in this sheet, the rest = distinct POs per category in the "נוספות" sheet
+  const catF=name=>{
+    if(name===MAIN_CAT)return rows.length?`SUMPRODUCT((${rng('A')}<>"")/COUNTIF(${rng('A')},${rng('A')}&""))`:null;
+    if(!ex)return null;
+    const q=`'${ex.name.replace(/'/g,"''")}'!`, B=`${q}$B$2:$B$${ex.n+1}`, Cc=`${q}$C$2:$C$${ex.n+1}`;
+    return `SUMPRODUCT((${Cc}="${name}")/COUNTIFS(${B},${B},${Cc},${Cc}))`;
+  };
+  const catCell=(ref,c)=>cellXml(ref,c.n,S.num,catF(c.name)||undefined);
   row(1,[cellXml('A1','סיכומון',S.title),cellXml('I1','סיכומון',S.title)]);
-  row(2,[cellXml('A2',cats[0].name,S.lab),cellXml('B2',cats[0].n,S.num),cellXml('I2','סוג מנה',S.lab),cellXml('J2','מנות רגילות',S.lab),cellXml('K2','טיבעוני',S.lab),cellXml('L2','צליאק',S.lab)]);
+  row(2,[cellXml('A2',cats[0].name,S.lab),catCell('B2',cats[0]),cellXml('I2','סוג מנה',S.lab),cellXml('J2','מנות רגילות',S.lab),cellXml('K2','טיבעוני',S.lab),cellXml('L2','צליאק',S.lab)]);
   for(let i=0;i<7;i++){
     const n=3+i, t=sum[i], cr=SUM_CRIT[i].map(c=>`${rng('H')}, ${c}`).join(', ');
     const cells=[];
-    if(i+1<cats.length)cells.push(cellXml('A'+n,cats[i+1].name,S.lab),cellXml('B'+n,cats[i+1].n,S.num));
+    if(i+1<cats.length)cells.push(cellXml('A'+n,cats[i+1].name,S.lab),catCell('B'+n,cats[i+1]));
     cells.push(cellXml('I'+n,t.name,S.lab),
       cellXml('J'+n,t.I,S.num,`SUMIFS(${rng('I')}, ${cr})`),cellXml('K'+n,t.J,S.num,`SUMIFS(${rng('J')}, ${cr})`),cellXml('L'+n,t.K,S.num,`SUMIFS(${rng('K')}, ${cr})`));
     row(n,cells);
@@ -620,9 +628,10 @@ const safeName=(n,used)=>{let s=n.replace(/[\[\]:*?\/\\]/g,'.').slice(0,31),b=s,
 function buildXlsx(days,withExtras){
   const used=new Set(), sheets=[];
   for(const d of days){
-    sheets.push({name:safeName(d.name,used),xml:dateSheetXml(d),filter:`$A$12:$AA$${Math.max(13,12+d.rows.length)}`});
-    const n=d.others.reduce((a,o)=>a+o.items.length,0);
-    if(withExtras&&n)sheets.push({name:safeName('נוספות '+d.name.replace(/^\S+\s/,''),used),xml:extrasSheetXml([d]),filter:`$A$1:$L$${n+1}`});
+    const n=d.others.reduce((a,o)=>a+o.items.length,0), ds={name:safeName(d.name,used)};sheets.push(ds);
+    const ex=withExtras&&n?{name:safeName('נוספות '+d.name.replace(/^\S+\s/,''),used),n}:null;
+    Object.assign(ds,{xml:dateSheetXml(d,ex),filter:`$A$12:$AA$${Math.max(13,12+d.rows.length)}`});
+    if(ex)sheets.push({name:ex.name,xml:extrasSheetXml([d]),filter:`$A$1:$L$${n+1}`});
   }
   const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${xesc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets>
