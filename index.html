@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 14.10-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -930,8 +930,12 @@ function waType(p){
 }
 // diners = the PO's quantity: every item except the stands themselves
 // diners = the event quantity only; add-ons ("תוספת מנה עיקרית") are written after it, not added in (yarin 2026-10-14)
-const waDiners=p=>{const its=(p.items||[]).filter(i=>!RX.stand.test(i.desc));return qsum(its.filter(i=>!RX.addon.test(i.desc)))||qsum(its)||''};
-const waAdds=p=>(p.items||[]).filter(i=>!RX.stand.test(i.desc)&&RX.addon.test(i.desc)).map(a=>' + תוספת '+a.qty+(/עיקרית/.test(a.desc)?' עיקרית':'')).join('');
+// trays (חמגשית) are not diners either: "+ 3 חמגשיות ללא גלוטן" (yarin 2026-10-15)
+const isTray=d=>/חמגשי/.test(d);
+const waDiners=p=>{const its=(p.items||[]).filter(i=>!RX.stand.test(i.desc)&&!isTray(i.desc));return qsum(its.filter(i=>!RX.addon.test(i.desc)))||qsum(its)||''};
+const waAdds=p=>(p.items||[]).filter(i=>!RX.stand.test(i.desc)).map(a=>
+  isTray(a.desc)?' + '+a.qty+' חמגשיות'+(RX.celiac.test(a.desc)?' ללא גלוטן':RX.vegan.test(a.desc)?' טבעוניות':''):
+  RX.addon.test(a.desc)?' + תוספת '+a.qty+(/עיקרית/.test(a.desc)?' עיקרית':''):'').join('');
 // stands-only POs get their own message (yarin's format): one line per stand, every stand = 200 portions;
 // a stand with an added-portions line is written without the 200 and the addition follows on its own line
 const isBarista=d=>/בריסטה|שתייה חמה/.test(d);
@@ -1276,7 +1280,7 @@ const HE_DAYS=['ראשון','שני','שלישי','רביעי','חמישי','ש�
 // diners = the main event item only; add-ons are written after it ("+ תוספת 150 עיקרית") and don't count for drinks
 function coverDoc(p,withOps){
   const its=(p.items||[]).filter(i=>!RX.stand.test(i.desc)), adds=its.filter(i=>RX.addon.test(i.desc));
-  const main=qsum(its.filter(i=>!RX.addon.test(i.desc)))||qsum(its);
+  const main=+waDiners(p)||0;
   // drinks (yarin): buffet (מזנון) events with operation = water qty/5 + mixed qty/3; otherwise total qty/3 of which 30% large water
   const buffet=withOps&&its.some(i=>/מזנון/.test(i.desc)); // only events with operation
   const water=buffet?Math.round(main/5):Math.round(Math.round(main/3)*0.3), mix=buffet?Math.round(main/3):Math.round(main/3)-water, tot=water+mix;
@@ -1284,7 +1288,7 @@ function coverDoc(p,withOps){
   const v={TOT:tot,WATER:water,MIX:mix,ADDR:clean(p.address),OPS:withOps?' - בתפעול ______________':' - ללא תפעול',
     DATE:d?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():'',DAY:d?HE_DAYS[d.getDay()]:'',
     OUT:p.hh==null?'':hhmm((p.hh+20)%24,p.mm),TIME:hhmm(p.hh,p.mm),TYPE:waType(p)||'אירוע מבושל עם הפעלה חד"פ',
-    DINERS:main,DINX:' איש'+adds.map(a=>' + תוספת '+a.qty+(/עיקרית/.test(a.desc)?' עיקרית':'')).join(''),
+    DINERS:main,DINX:' איש'+waAdds(p),
     PO:p.po,CONTACT:[clean(p.phone),clean(p.contact)].filter(Boolean).join(' ')};
   const files=COVER_TPL.files.map(([n,c])=>{
     if(typeof c!=='string')return [n,Uint8Array.from(atob(c.b64),ch=>ch.charCodeAt(0))];
