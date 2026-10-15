@@ -163,8 +163,8 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
 
   <div class="field">
     <label for="link">קישור למילוי באתר (נכנס להודעת הוואטסאפ בטבלת הסיכום)</label>
-    <input type="url" id="link" dir="ltr" placeholder="https://catering.li-bar.co.il/front/location/5">
-    <small>אם השדה ריק, נכנס הקישור לתפריט של לי בר (catering.li-bar.co.il). קישור אחר שמדביקים כאן מחליף אותו ונשמר לפעם הבאה.</small>
+    <input type="url" id="link" dir="ltr" placeholder="https://catering.lee-bar.co.il/front/location/5">
+    <small>אם השדה ריק, נכנס הקישור לתפריט של לי בר (catering.lee-bar.co.il). קישור אחר שמדביקים כאן מחליף אותו ונשמר לפעם הבאה.</small>
   </div>
 
   <div class="bar">
@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10-2</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -913,7 +913,7 @@ function cx(ref,v,s,f){
 const LINK_CELL='S1';
 // WhatsApp link written as a real hyperlink: Excel's HYPERLINK() formula stops at 255 characters,
 // and the encoded Hebrew message is much longer than that
-const MENU_LINK='https://catering.li-bar.co.il/front/location/5';
+const MENU_LINK='https://catering.lee-bar.co.il/front/location/5';
 const hhmm=(h,m)=>h==null?'':String(h).padStart(2,'0')+':'+String(m||0).padStart(2,'0');
 // which event the message names, from the long item description (yarin's rules, in priority order)
 function waType(p){
@@ -1392,7 +1392,8 @@ function anchors(files){
 $('btn-dl').addEventListener('click',()=>download(true,false));
 $('btn-sum').addEventListener('click',()=>download(false,true));
 $('btn-both').addEventListener('click',()=>download(true,true));
-try{$('link').value=localStorage.getItem('summaryLink')||''}catch(e){}
+// a link saved before the site moved to lee-bar.co.il is updated to the new address
+try{$('link').value=(localStorage.getItem('summaryLink')||'').replace('catering.li-bar.co.il','catering.lee-bar.co.il')}catch(e){}
 $('link').addEventListener('input',()=>{try{localStorage.setItem('summaryLink',$('link').value.trim())}catch(e){}});
 $('btn-reset').addEventListener('click',()=>{
   reportRows=multiRows=result=sumRes=null;current=null;included.clear();renderSummary();
