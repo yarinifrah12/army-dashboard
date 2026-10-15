@@ -180,7 +180,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 15.10-4</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -781,6 +781,9 @@ const SHEETS=[
     const reg=its.filter(i=>!cel.includes(i)&&!veg.includes(i));
     const R=qsum(reg), V=qsum(veg), K=qsum(cel), T=sandwichTypes(p.addrRaw);
     let notes=p.notes.split(' | ').filter(n=>n&&!T.used.some(u=>norm(n).includes(norm(u))||norm(u).includes(norm(n)))).join(' | ');
+    // celiac trays that are vegan/vegetarian get a note (yarin 2026-10-15)
+    const aV=qsum(cel.filter(i=>/טבעונ/.test(i.desc))), aC=qsum(cel.filter(i=>!/טבעונ/.test(i.desc)&&/צמחונ/.test(i.desc)));
+    notes=[aV?aV+' אלרגניים טבעוני':'',aC?aC+' אלרגניים צמחוני':'',notes].filter(Boolean).join(' | ');
     let list=T.split.map(x=>({h:x.name,i:x.q}));
     if(list.length){
       const tot=list.reduce((a,x)=>a+x.i,0);
@@ -836,7 +839,7 @@ const SHEETS=[
   head:['מס פק"א','איש קשר','טלפון','מיקום','סוג שילוח','יום אספקה','תאריך','שעת אכילה','טבעוני+צמחוני-מנות','עיקרית-מנות','עיקרית-מנות','ירקנית-ק"ג','פחמימה-ק"ג','פחמימה-ק"ג','סלט ק"ג','אלרגנים','הערות מהכתובת'],
   widths:[12,11,12,22,9,9,11,9,12,11,11,10,11,11,9,9,34],
   take:its=>{if(its.some(i=>/תפזורת/.test(i.desc)&&!RX.parts.test(i.desc)))return null; // PO with a bulk meal (ארוחה מוכנה בתפזורת) belongs to the trays file
-    const b=its.filter(i=>RX.parts.test(i.desc)&&!RX.hamin.test(i.desc));return b.length?[...b,...its.filter(i=>/תוספת מנה עיקרית/.test(i.desc)&&!RX.event.test(i.desc))]:null},
+    const b=its.filter(i=>RX.parts.test(i.desc)&&!RX.hamin.test(i.desc));return b.length?[...b,...its.filter(i=>!b.includes(i)&&(/תוספת מנה עיקרית/.test(i.desc)||RX.celiac.test(i.desc))&&!RX.event.test(i.desc))]:null},
   rows:(p,its)=>{
     const q=re=>qsum(its.filter(i=>re.test(i.desc)));
     const kg=(re,f)=>{const n=q(re);return n?{v:n*f,f:n+'*'+f,t:'n'}:C('','n')};
