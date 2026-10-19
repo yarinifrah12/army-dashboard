@@ -167,6 +167,13 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <small>אם השדה ריק, נכנס הקישור לתפריט של לי בר (catering.lee-bar.co.il). קישור אחר שמדביקים כאן מחליף אותו ונשמר לפעם הבאה.</small>
   </div>
 
+  <div class="field" id="sp-box">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="status" id="sp-state" role="status"></span>
+      <button class="ghost" id="sp-in" hidden>התחברות עם Microsoft</button><button class="ghost" id="sp-now" hidden>סנכרון עכשיו</button><button class="ghost" id="sp-out" hidden>ניתוק</button></div>
+    <div id="sp-cfg" hidden style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="sp-client" dir="ltr" placeholder="Application (client) ID" style="flex:1;min-width:220px"><input id="sp-tenant" dir="ltr" placeholder="Directory (tenant) ID" style="flex:1;min-width:220px"><button class="ghost" id="sp-save">שמירה</button></div>
+    <small>הודעות שנשלחו, תשובות לקוחות ומדבקות שהודפסו נשמרים בקובץ משותף בתיקיית לי בר בשייר פוינט, וכל המחשבים המחוברים רואים אותם.</small>
+  </div>
+
   <div class="bar">
     <button class="primary" id="btn-both" disabled>הורדת שני הקבצים</button>
     <button class="ghost" id="btn-dl" disabled>רק חמגשיות ותפזורת</button>
@@ -180,7 +187,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 19.10-10</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 19.10-11</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -1321,12 +1328,131 @@ function coverDoc(p,withOps){
     return [n,c]});
   return new Blob([zipStore(files)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
-const WA_KEY='waSent';
-const waLoad=()=>{try{return JSON.parse(localStorage.getItem(WA_KEY)||'{}')}catch(e){return {}}};
-const waSave=m=>{try{localStorage.setItem(WA_KEY,JSON.stringify(m))}catch(e){}};
-const ANS_KEY='waAnswered'; // {po:'כן'|'לא'}
-const ansLoad=()=>{try{return JSON.parse(localStorage.getItem(ANS_KEY)||'{}')}catch(e){return {}}};
-const ansSave=m=>{try{localStorage.setItem(ANS_KEY,JSON.stringify(m))}catch(e){}};
+/* ---- shared marks (yarin): WhatsApp sent / answered and printed labels are kept in one JSON file in the
+   lee bar SharePoint folder, so every computer sees the same marks. Sign-in is with the work Microsoft account
+   (Microsoft Graph, app registered by IT). Every mark carries its time; a removed mark is kept as v:null, and
+   merging keeps the newest of each, so two people working at once don't erase each other ---- */
+const SP_FOLDER='https://leebarltd.sharepoint.com/:f:/s/leebar/IgDibhTtxYBDQYeL-8zK14RSAXHLyVquswwkHn2qBQl9_fk?e=eVcemR';
+const SP_FILE='army-dashboard-shared.json';
+const SP_CFG_DEFAULT={clientId:'06fe29f6-ff44-44cf-88ea-2a913646cabd',tenantId:'6b14abc0-8a0a-497c-8308-1151ee2ec242'}; // Entra app "Army Dashboard" (lee bar)
+const SH_NAMES=['waSent','waAnswered','lblPrinted'];
+const shCfg=()=>{let c={};try{c=JSON.parse(localStorage.getItem('spCfg')||'{}')}catch(e){}return {clientId:c.clientId||SP_CFG_DEFAULT.clientId,tenantId:c.tenantId||SP_CFG_DEFAULT.tenantId}};
+// local copy: {name:{key:{v,t}}}; the first time, the marks this browser already had are taken over
+let SH=(()=>{let s=null;try{s=JSON.parse(localStorage.getItem('sharedMarks')||'null')}catch(e){}
+  if(!s){s={};SH_NAMES.forEach(n=>{let m={};try{m=JSON.parse(localStorage.getItem(n)||'{}')}catch(e){}s[n]={};for(const k in m)s[n][k]={v:m[k],t:1}})}
+  SH_NAMES.forEach(n=>{s[n]=s[n]||{}});return s})();
+const shKeep=()=>{try{localStorage.setItem('sharedMarks',JSON.stringify(SH));SH_NAMES.forEach(n=>localStorage.setItem(n,JSON.stringify(shLoad(n))))}catch(e){}};
+function shLoad(n){const o={},s=SH[n]||{};for(const k in s)if(s[k].v!=null)o[k]=s[k].v;return o}
+function shSave(n,m){
+  const s=SH[n]=SH[n]||{},t=Date.now();let ch=false;
+  for(const k in m)if(!s[k]||JSON.stringify(s[k].v)!==JSON.stringify(m[k])){s[k]={v:m[k],t};ch=true}
+  for(const k in s)if(s[k].v!=null&&!(k in m)){s[k]={v:null,t};ch=true}
+  if(ch){shKeep();spPushSoon()}
+}
+function shMerge(a,b){const o={};SH_NAMES.forEach(n=>{const x=a[n]||{},y=b[n]||{},r=o[n]={};
+  for(const k in x)r[k]=x[k];for(const k in y)if(!r[k]||(y[k].t||0)>(r[k].t||0))r[k]=y[k]});return o}
+
+let spApp=null,spAcct=null,spLoc=null,spTag=null,spBusy=false,spDirty=false,spTimer=null,spErr='',spLast=0;
+const spOk=()=>/^https:$/.test(location.protocol)||/^localhost$|^127\./.test(location.hostname);
+function spScript(){return new Promise((ok,no)=>{if(window.msal)return ok();const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js';s.onload=()=>ok();s.onerror=()=>no(new Error('msal'));document.head.appendChild(s)})}
+async function spInit(){
+  const c=shCfg();if(!c.clientId||!c.tenantId)return false;
+  if(spApp)return true;
+  await spScript();
+  spApp=new msal.PublicClientApplication({auth:{clientId:c.clientId,authority:'https://login.microsoftonline.com/'+c.tenantId,redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
+  await spApp.initialize();
+  await spApp.handleRedirectPromise().catch(()=>null);
+  spAcct=spApp.getAllAccounts()[0]||null;
+  return true;
+}
+const SP_SCOPES=['Files.ReadWrite.All'];
+async function spToken(){
+  try{return (await spApp.acquireTokenSilent({scopes:SP_SCOPES,account:spAcct})).accessToken}
+  catch(e){return (await spApp.acquireTokenPopup({scopes:SP_SCOPES,account:spAcct})).accessToken}
+}
+async function spFetch(path,opt={}){
+  const tok=await spToken();
+  return fetch('https://graph.microsoft.com/v1.0'+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+tok}});
+}
+// the folder behind the sharing link
+async function spFolder(){
+  if(spLoc)return spLoc;
+  const id='u!'+btoa(unescape(encodeURIComponent(SP_FOLDER))).replace(/=+$/,'').replace(/\//g,'_').replace(/\+/g,'-');
+  const r=await spFetch('/shares/'+id+'/driveItem?$select=id,parentReference');
+  if(!r.ok)throw new Error(r.status===403||r.status===401?'אין הרשאה לתיקייה':'התיקייה לא נמצאה ('+r.status+')');
+  const j=await r.json();return spLoc={drive:j.parentReference.driveId,item:j.id};
+}
+const spPath=f=>'/drives/'+f.drive+'/items/'+f.item+':/'+encodeURIComponent(SP_FILE)+':';
+async function spRead(){
+  const f=await spFolder(),r=await spFetch(spPath(f)+'?$select=eTag,@microsoft.graph.downloadUrl');
+  if(r.status===404)return {data:{},tag:null};
+  if(!r.ok)throw new Error('קריאת הקובץ נכשלה ('+r.status+')');
+  const m=await r.json();
+  if(m.eTag===spTag&&!spDirty)return null; // nothing new
+  const d=await fetch(m['@microsoft.graph.downloadUrl']);let data={};try{data=await d.json()}catch(e){}
+  return {data,tag:m.eTag};
+}
+async function spSync(){
+  if(!spAcct||spBusy)return;spBusy=true;
+  try{
+    for(let tries=0;tries<4;tries++){
+      const got=await spRead();
+      if(got){const before=JSON.stringify(SH);SH=shMerge(SH,got.data);spTag=got.tag;if(JSON.stringify(SH)!==before){shKeep();spRedraw()}}
+      if(!spDirty)break;
+      const f=await spFolder(),h={'Content-Type':'application/json'};
+      if(spTag)h['If-Match']=spTag;else h['If-None-Match']='*';
+      const r=await spFetch(spPath(f)+'/content',{method:'PUT',headers:h,body:JSON.stringify(SH)});
+      if(r.status===412||r.status===409){spTag='?';continue} // someone saved in between: read again and merge
+      if(!r.ok)throw new Error('השמירה נכשלה ('+r.status+')');
+      spTag=(await r.json()).eTag;spDirty=false;break;
+    }
+    spErr='';spLast=Date.now();
+  }catch(e){spErr=e.message==='msal'?'לא ניתן לטעון את ההתחברות של Microsoft':e.message||String(e)}
+  spBusy=false;spShow();
+  if(spDirty&&!spErr)spPushSoon();
+}
+function spPushSoon(){spDirty=true;if(!spAcct)return;clearTimeout(spTimer);spTimer=setTimeout(spSync,1200)}
+function spRedraw(){try{if(typeof sumRes!=='undefined'&&sumRes){renderWa();renderLabels()}}catch(e){}}
+function spShow(){
+  const st=document.getElementById('sp-state'),bi=document.getElementById('sp-in'),bo=document.getElementById('sp-out'),bn=document.getElementById('sp-now'),cf=document.getElementById('sp-cfg');
+  if(!st)return;const c=shCfg(),p2=x=>String(x).padStart(2,'0');
+  bi.hidden=bo.hidden=bn.hidden=true;cf.hidden=true;
+  if(!spOk()){st.textContent='שמירה משותפת עובדת רק מהאתר, לא מקובץ שנפתח במחשב. הסימונים נשמרים כרגע רק במחשב הזה.';return}
+  if(!c.clientId||!c.tenantId){st.textContent='שמירה משותפת: מחכה לפרטי החיבור מ-IT. בינתיים הסימונים נשמרים רק במחשב הזה.';cf.hidden=false;return}
+  if(!spAcct){st.textContent='שמירה משותפת: לא מחובר. הסימונים נשמרים רק במחשב הזה.';bi.hidden=false;return}
+  bo.hidden=bn.hidden=false;
+  const d=spLast?new Date(spLast):null;
+  st.textContent=spErr?'שמירה משותפת: '+spErr:'שמירה משותפת: מחובר כ'+(spAcct.name||spAcct.username)+(d?' · עודכן '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()):'');
+  st.style.color=spErr?'var(--danger,#b42318)':'';
+}
+async function spStart(){
+  spShow();if(!spOk())return;
+  try{if(!(await spInit()))return}catch(e){spErr='לא ניתן לטעון את ההתחברות של Microsoft';spShow();return}
+  spShow();if(spAcct)spSync();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('sp-in').addEventListener('click',async()=>{
+    try{await spInit();const r=await spApp.loginPopup({scopes:SP_SCOPES});spAcct=r.account;spDirty=true;spSync()}
+    catch(e){spErr='ההתחברות לא הושלמה';spShow()}
+  });
+  document.getElementById('sp-out').addEventListener('click',async()=>{try{await spApp.logoutPopup({account:spAcct})}catch(e){}spAcct=null;spTag=null;spLoc=null;spShow()});
+  document.getElementById('sp-now').addEventListener('click',()=>{spTag=null;spSync()});
+  document.getElementById('sp-save').addEventListener('click',()=>{
+    const ci=document.getElementById('sp-client').value.trim(),ti=document.getElementById('sp-tenant').value.trim();
+    try{localStorage.setItem('spCfg',JSON.stringify({clientId:ci,tenantId:ti}))}catch(e){}
+    spApp=null;spStart();
+  });
+  spStart();
+  // check for other people's marks every 20 seconds while the page is open in front
+  setInterval(()=>{if(spAcct&&!document.hidden)spSync()},20000);
+  document.addEventListener('visibilitychange',()=>{if(spAcct&&!document.hidden)spSync()});
+});
+const waLoad=()=>shLoad('waSent');
+const waSave=m=>shSave('waSent',m);
+// {po:'כן'|'לא'}
+const ansLoad=()=>shLoad('waAnswered');
+const ansSave=m=>shSave('waAnswered',m);
 function renderWa(){
   const tb=$('wa-body');tb.innerHTML='';
   const withOps=new Set(sumRes?sumRes.sheets.filter(s=>s.def.name==='אירוע צבא עם הפעלה').flatMap(s=>s.entries.map(e=>e.p)):[]);
@@ -1489,9 +1615,8 @@ function labelsName(days){
   return 'מדבקות '+(days.length===1?f(days[0]):f(days[0])+'-'+f(days[days.length-1]))+'.xlsx';
 }
 // printed labels are marked green; the marks are kept per label row (date + PO + kind), see lblLoad/lblSave
-const LBL_KEY='lblPrinted';
-const lblLoad=()=>{try{return JSON.parse(localStorage.getItem(LBL_KEY)||'{}')}catch(e){return {}}};
-const lblSave=m=>{try{localStorage.setItem(LBL_KEY,JSON.stringify(m))}catch(e){}};
+const lblLoad=()=>shLoad('lblPrinted');
+const lblSave=m=>shSave('lblPrinted',m);
 const lblId=j=>[j.dateKey,j.po,j.cat,j.type,j.labelPo||''].join('|');
 function markPrinted(jobs){const m=lblLoad(),t=Date.now();jobs.forEach(j=>m[lblId(j)]=t);lblSave(m);renderLabels()}
 // every print is an Excel file in the label format (yarin: the browser print did not come out right); kitchen/regular prints mark the rows
