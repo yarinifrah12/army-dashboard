@@ -186,8 +186,12 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <div id="sum-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
+      <div class="field"><label for="sp-rep-link">טבלת הסיכום בשייר פוינט (קישור לקובץ של החודש)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input type="url" id="sp-rep-link" dir="ltr" style="flex:1;min-width:260px"><button class="primary" id="btn-sp-rep">הוספת פק"אות חדשות לטבלת הסיכום</button></div>
+        <span class="status" id="sp-rep-state" role="status"></span>
+        <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-3</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -1447,6 +1451,83 @@ document.addEventListener('DOMContentLoaded',()=>{
   // check for other people's marks every 20 seconds while the page is open in front
   setInterval(()=>{if(spAcct&&!document.hidden)spSync()},20000);
   document.addEventListener('visibilitychange',()=>{if(spAcct&&!document.hidden)spSync()});
+});
+/* ---- summary table in SharePoint (yarin): POs the monthly workbook doesn't have yet are added at the end of
+   their sheet, highlighted yellow. Columns are matched by header name, because her workbook's columns are
+   not exactly the dashboard's; a dashboard column her sheet doesn't have is left out ---- */
+const SP_REPORT_DEFAULT='https://leebarltd.sharepoint.com/:x:/s/leebar/IQDLTuPBQO9aRJKTfPFTsyflAf9ZFwj5h_F3BvKrGAxa6rw?e=4AiP4V';
+const spReportLink=()=>{let v='';try{v=localStorage.getItem('spReport')||''}catch(e){}return v||SP_REPORT_DEFAULT};
+const hdrKey=h=>String(h==null?'':h).replace(/["'״׳:\s\-_.]/g,'').replace(/^(?:מספר|מס)(?=פקא)/,'').replace(/טיבעוני/g,'טבעוני').replace(/צימחוני/g,'צמחוני').replace(/פלאפון/g,'טלפון');
+async function spItem(url){
+  const id='u!'+btoa(unescape(encodeURIComponent(url))).replace(/=+$/,'').replace(/\//g,'_').replace(/\+/g,'-');
+  const r=await spFetch('/shares/'+id+'/driveItem?$select=id,name,parentReference');
+  if(!r.ok)throw new Error(r.status===403||r.status===401?'אין הרשאה לקובץ טבלת הסיכום':'קובץ טבלת הסיכום לא נמצא ('+r.status+')');
+  const j=await r.json();return {base:'/drives/'+j.parentReference.driveId+'/items/'+j.id+'/workbook',name:j.name};
+}
+const colName=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26}return s};
+// rows to add for one sheet: [{cells:[{f,fmt}],po}], given her used range values
+function spReportRows(s,values){
+  const hi=values.findIndex(r=>r.some(v=>/פקא/.test(hdrKey(v))));
+  if(hi<0)return {err:'לא נמצאה שורת כותרות'};
+  const H=values[hi].map(hdrKey), poCol=H.findIndex(k=>/פקא/.test(k));
+  const have=new Set();values.forEach(r=>{const v=String(r[poCol]??'').trim();if(/^\d{6,}$/.test(v))have.add(v)});
+  // her column -> dashboard column, the n-th header of a name to the n-th of the same name
+  const D=s.def.head.map(hdrKey), seen={}, map=H.map((k,i)=>{if(!k)return D[i]&&!H.includes(D[i])&&!/סטטוס/.test(D[i])?i:-1; // a header she left blank (her time column) takes the dashboard column in the same place
+    const n=seen[k]=(seen[k]||0)+1;let c=-1;for(let i=0,m=0;i<D.length;i++)if(D[i]===k&&++m===n){c=i;break}return c});
+  const out=[], fresh=s.entries.filter(e=>!have.has(String(e.p.po)));
+  for(const e of fresh)e.rows.forEach((row,ri)=>{
+    const val=c=>{if(!c)return {f:''};
+      if(c.t==='k'||c.t==='g')return {f:''};
+      if(c.v==='sumIJK'||typeof c.v==='string'&&c.v.startsWith('sum:')){const[a,b]=c.v==='sumIJK'?[8,10]:c.v.split(':').slice(1).map(x=>x.charCodeAt(0)-65);let t=0,any=false;for(let i=a;i<=b;i++){const x=Number(row[i]&&row[i].v);if(row[i]&&row[i].v!==''&&!isNaN(x)){t+=x;any=true}}return {f:any?t:''}}
+      if(c.f)return {f:Math.round(c.v*1000)/1000};
+      let v=c.v==null?'':c.v;
+      if(c.t==='d')return {f:v,fmt:'dd/mm/yyyy'};if(c.t==='h')return {f:v,fmt:'h:mm'};
+      if(typeof v==='string'&&c.t==='n'&&/^\d+$/.test(v))v=Number(v);
+      if(typeof v==='string'&&/^0\d/.test(v))return {f:v,fmt:'@'};
+      if(typeof v==='string'&&/^[=+\-@]/.test(v))v="'"+v;
+      return {f:v};
+    };
+    out.push({po:ri?'':String(e.p.po),cells:map.map(c=>c<0?{f:''}:(ri&&c===0?{f:''}:val(row[c])))});
+  });
+  return {rows:out,width:H.length,pos:new Set(fresh.map(e=>e.p.po)).size};
+}
+async function spAddToReport(){
+  const st=$('sp-rep-state');
+  if(!sumRes){st.textContent='צריך קודם להעלות את שני הקבצים.';return}
+  if(!spAcct){st.textContent='צריך קודם להתחבר עם Microsoft (למעלה, ליד "שמירה משותפת").';return}
+  const btn=$('btn-sp-rep');btn.disabled=true;st.textContent='בודק מה כבר יש בטבלת הסיכום...';
+  try{
+    const wb=await spItem(spReportLink()),plan=[];
+    for(const s of sumRes.sheets){
+      if(!s.entries.length)continue;
+      const ws=wb.base+"/worksheets/"+encodeURIComponent(s.def.name);
+      const r=await spFetch(ws+"/usedRange(valuesOnly=true)?$select=address,values");
+      if(r.status===404){plan.push({s,err:'אין גיליון בשם הזה'});continue}
+      if(!r.ok)throw new Error('קריאת הגיליון '+s.def.name+' נכשלה ('+r.status+')');
+      const u=await r.json(), last=Number((u.address.split('!')[1]||'').split(':').pop().replace(/\D/g,''))||u.values.length;
+      plan.push({s,ws,last,...spReportRows(s,u.values)});
+    }
+    const add=plan.filter(x=>x.rows&&x.rows.length);
+    if(!add.length){st.textContent='אין פק"אות חדשות. כל הפק"אות כבר בטבלת הסיכום ('+wb.name+').';btn.disabled=false;return}
+    const sumTxt=add.map(x=>x.s.def.name+': '+x.pos).join(' · ');
+    if(!confirm('להוסיף לטבלת הסיכום "'+wb.name+'" פק"אות חדשות בצהוב?\n'+sumTxt))throw new Error('בוטל');
+    for(const x of add){
+      const from=x.last+1,to=x.last+x.rows.length,addr='A'+from+':'+colName(x.width-1)+to;
+      const R=x.ws+"/range(address='"+addr+"')";
+      const body={formulas:x.rows.map(r=>r.cells.map(c=>c.f)),numberFormat:x.rows.map(r=>r.cells.map(c=>c.fmt||'General'))};
+      const w=await spFetch(R,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!w.ok)throw new Error('הכתיבה לגיליון '+x.s.def.name+' נכשלה ('+w.status+')');
+      await spFetch(R+'/format/fill',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({color:'#FFFF00'})});
+    }
+    const skip=plan.filter(x=>x.err).map(x=>x.s.def.name+' ('+x.err+')');
+    st.textContent='נוספו בצהוב לטבלת הסיכום: '+sumTxt+(skip.length?' · לא עודכן: '+skip.join(', '):'');
+  }catch(e){st.textContent=e.message==='בוטל'?'לא נוסף דבר.':'עדכון טבלת הסיכום נכשל: '+(e.message||e)}
+  btn.disabled=false;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const l=$('sp-rep-link');l.value=spReportLink();
+  l.addEventListener('change',()=>{try{localStorage.setItem('spReport',l.value.trim())}catch(e){}});
+  $('btn-sp-rep').addEventListener('click',spAddToReport);
 });
 const waLoad=()=>shLoad('waSent');
 const waSave=m=>shSave('waSent',m);
