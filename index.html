@@ -187,7 +187,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <h2 class="sec">טבלת סיכום</h2>
       <div class="sheets" id="sheets"></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-1</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-2</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -204,12 +204,12 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <div class="legend"><span><i class="sw" style="background:var(--green-row)"></i>אלרגניים (חמגשית טבעונית/צמחונית לל"ג)</span><span><i class="sw" style="background:var(--yellow-row)"></i>לבדיקה ידנית</span></div>
     <div id="lbl-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">מדבקות</h2><span class="status" id="lbl-count"></span></div>
-      <div class="bar"><button class="primary" id="btn-lbl" disabled>הורדת קובץ מדבקות</button><button class="primary" id="btn-ship" disabled>מדבקות לשילוח (2 מכל שורה)</button><span class="status">קובץ אקסל בפורמט המדבקה (מדפסת Godex), מדבקה בכל עמוד וכל המדבקות של פק"א ברצף. נכנסים הימים שמסומנים למעלה.</span></div>
+      <div class="bar"><button class="primary" id="btn-lbl" disabled>הורדת קובץ מדבקות</button><button class="primary" id="btn-ship" disabled>מדבקות לשילוח (2 מכל שורה)</button><button class="primary" id="btn-rep" disabled>מדבקות דיווח (3 מכל שורה)</button><span class="status">קובץ אקסל בפורמט המדבקה (מדפסת Godex), מדבקה בכל עמוד וכל המדבקות של פק"א ברצף. נכנסים הימים שמסומנים למעלה.</span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג</th><th>סוג מנה</th><th>מנות</th><th>ק"ג</th><th>חישוב</th><th>מדבקות</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="lbl-body"></tbody></table></div>
     </div>
     <div id="taf-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">מדבקות תפזורת</h2><span class="status" id="taf-count"></span></div>
-      <div class="bar"><button class="primary" id="btn-taf-print" disabled>מדבקות מטבח תפזורת</button><button class="primary" id="btn-taf-ship" disabled>מדבקות שילוח תפזורת (2 מכל פק"א)</button><span class="status">קובצי אקסל בפורמט התפזורת. מדבקות מטבח: כמות המדבקות = הקרטונים החמים. מדבקות שילוח: 2 לכל פק"א.</span></div>
+      <div class="bar"><button class="primary" id="btn-taf-print" disabled>מדבקות מטבח תפזורת</button><button class="primary" id="btn-taf-ship" disabled>מדבקות שילוח תפזורת (2 מכל פק"א)</button><button class="primary" id="btn-taf-rep" disabled>מדבקות דיווח תפזורת (3 מכל פק"א)</button><span class="status">קובצי אקסל בפורמט התפזורת. מדבקות מטבח: כמות המדבקות = הקרטונים החמים. מדבקות שילוח: 2 לכל פק"א.</span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג מנה</th><th>מנות</th><th>קרטונים חמים</th><th>קרטון סלטים</th><th>מדבקות מטבח</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="taf-body"></tbody></table></div>
     </div>
   </div>
@@ -1620,11 +1620,11 @@ const lblSave=m=>shSave('lblPrinted',m);
 const lblId=j=>[j.dateKey,j.po,j.cat,j.type,j.labelPo||''].join('|');
 function markPrinted(jobs){const m=lblLoad(),t=Date.now();jobs.forEach(j=>m[lblId(j)]=t);lblSave(m);renderLabels()}
 // every print is an Excel file in the label format (yarin: the browser print did not come out right); kitchen/regular prints mark the rows
-function printLabels(jobs,name,ship){
+function printLabels(jobs,name,ship,noMark){
   if(!jobs.length)return;
   const taf=jobs.some(j=>j.fmt==='taf');
   saveFiles([{name,blob:new Blob([taf?buildTafXlsx(jobs,ship):buildLabelsXlsx(jobs)],{type:XMIME})}]);
-  if(!ship)markPrinted(jobs);
+  if(!ship&&!noMark)markPrinted(jobs);
 }
 const lblDayName=pre=>{const d=lblDays();return d.length?labelsName(d).replace(/^מדבקות/,pre):pre+'.xlsx'};
 // all label rows of the ticked days; תפזורת has its own box (yarin), so each box takes its part
@@ -1668,8 +1668,8 @@ function renderLabels(){
   const tot=jobs.reduce((a,j)=>a+j.n,0), per=c=>jobs.filter(j=>j.cat===c).reduce((a,j)=>a+j.n,0);
   $('lbl-count').textContent=jobs.length?tot+' מדבקות · '+LBL_CATS.filter(c=>c!=='תפזורת').map(c=>c+' '+per(c)).join(' · ')+' · הודפסו '+pr+' מתוך '+jobs.length+' שורות':'';
   $('taf-count').textContent=taf.length?taf.length+' פק"אות · '+taf.reduce((a,j)=>a+j.n,0)+' מדבקות מטבח · '+taf.length*2+' מדבקות שילוח · הודפסו '+pt+' מתוך '+taf.length:'';
-  $('btn-lbl').disabled=$('btn-ship').disabled=!jobs.length;
-  $('btn-taf-print').disabled=$('btn-taf-ship').disabled=!taf.length;
+  $('btn-lbl').disabled=$('btn-ship').disabled=$('btn-rep').disabled=!jobs.length;
+  $('btn-taf-print').disabled=$('btn-taf-ship').disabled=$('btn-taf-rep').disabled=!taf.length;
 }
 /* ---- תפזורת labels as Excel, from yarin's workbook "הזמנות תפזורת M מדבקות למטבח ולשילוח": the first label of
    "מדבקות מטבח" (26 rows, columns A-E, B-C hidden, 39%) and of "מדבקות שילוח" (29 rows, columns A-B, 47%),
@@ -1785,6 +1785,9 @@ $('btn-sum').addEventListener('click',()=>download(false,true));
 $('btn-both').addEventListener('click',()=>download(true,true));
 $('btn-lbl').addEventListener('click',()=>download(false,false,true));
 $('btn-taf-print').addEventListener('click',()=>printLabels(lblTaf(),lblDayName('מדבקות מטבח תפזורת')));
+// report labels (yarin): 3 of each, kitchen format for תפזורת, not marked as printed
+$('btn-taf-rep').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:3})),lblDayName('מדבקות דיווח תפזורת'),false,true));
+$('btn-rep').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:3}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות דיווח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
 $('btn-taf-ship').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:2})),lblDayName('מדבקות שילוח תפזורת'),true));
 // shipping labels (yarin): 2 copies of every label row, kg rows with PO 0 included, in a separate file
 $('btn-ship').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:2}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות לשילוח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
