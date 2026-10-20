@@ -191,11 +191,15 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-3</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-6</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
     <h2 class="sec">חמגשיות ותפזורת</h2>
+    <div class="field"><label for="sp-taf-link">קובץ ההזמנות של החודש בשייר פוינט (גיליון לכל תאריך)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input type="url" id="sp-taf-link" dir="ltr" style="flex:1;min-width:260px"><button class="primary" id="btn-sp-taf">הוספת פק"אות חדשות לקובץ ההזמנות</button></div>
+      <span class="status" id="sp-taf-state" role="status"></span>
+      <small>מוסיף לגיליון של כל תאריך שסומן למעלה רק פק"אות שעוד לא מופיעות בו, בצבע צהוב, אחרי השורה האחרונה. העמודות המחושבות בקובץ נשארות כמו שהן. צריך להיות מחוברים עם Microsoft.</small></div>
     <div class="stats" id="stats"></div>
     <div id="notes" style="display:flex;flex-direction:column;gap:8px"></div>
     <div>
@@ -209,11 +213,13 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <div id="lbl-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">מדבקות</h2><span class="status" id="lbl-count"></span></div>
       <div class="bar"><button class="primary" id="btn-lbl" disabled>הורדת קובץ מדבקות</button><button class="primary" id="btn-ship" disabled>מדבקות לשילוח (2 מכל שורה)</button><button class="primary" id="btn-rep" disabled>מדבקות דיווח (3 מכל שורה)</button><span class="status">קובץ אקסל בפורמט המדבקה (מדפסת Godex), מדבקה בכל עמוד וכל המדבקות של פק"א ברצף. נכנסים הימים שמסומנים למעלה.</span></div>
+      <div class="wa-find"><label for="lbl-search">חיפוש פק"א</label><input id="lbl-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א או סוג מנה"><span class="status" id="lbl-found"></span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג</th><th>סוג מנה</th><th>מנות</th><th>ק"ג</th><th>חישוב</th><th>מדבקות</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="lbl-body"></tbody></table></div>
     </div>
     <div id="taf-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">מדבקות תפזורת</h2><span class="status" id="taf-count"></span></div>
       <div class="bar"><button class="primary" id="btn-taf-print" disabled>מדבקות מטבח תפזורת</button><button class="primary" id="btn-taf-ship" disabled>מדבקות שילוח תפזורת (2 מכל פק"א)</button><button class="primary" id="btn-taf-rep" disabled>מדבקות דיווח תפזורת (3 מכל פק"א)</button><span class="status">קובצי אקסל בפורמט התפזורת. מדבקות מטבח: כמות המדבקות = הקרטונים החמים. מדבקות שילוח: 2 לכל פק"א.</span></div>
+      <div class="wa-find"><label for="taf-search">חיפוש פק"א</label><input id="taf-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א או סוג מנה"><span class="status" id="taf-found"></span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג מנה</th><th>מנות</th><th>קרטונים חמים</th><th>קרטון סלטים</th><th>מדבקות מטבח</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="taf-body"></tbody></table></div>
     </div>
   </div>
@@ -1452,8 +1458,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   setInterval(()=>{if(spAcct&&!document.hidden)spSync()},20000);
   document.addEventListener('visibilitychange',()=>{if(spAcct&&!document.hidden)spSync()});
 });
-/* ---- summary table in SharePoint (yarin): POs the monthly workbook doesn't have yet are added at the end of
-   their sheet, highlighted yellow. Columns are matched by header name, because her workbook's columns are
+/* ---- summary table in SharePoint (yarin): POs the monthly workbook doesn't have yet are added inside the block
+   of their delivery date (after its last row), highlighted yellow; a date without a block gets a new block with
+   her header row, in date order. Columns are matched by header name, because her workbook's columns are
    not exactly the dashboard's; a dashboard column her sheet doesn't have is left out ---- */
 const SP_REPORT_DEFAULT='https://leebarltd.sharepoint.com/:x:/s/leebar/IQDLTuPBQO9aRJKTfPFTsyflAf9ZFwj5h_F3BvKrGAxa6rw?e=4AiP4V';
 const spReportLink=()=>{let v='';try{v=localStorage.getItem('spReport')||''}catch(e){}return v||SP_REPORT_DEFAULT};
@@ -1475,6 +1482,7 @@ function spReportRows(s,values){
   const D=s.def.head.map(hdrKey), seen={}, map=H.map((k,i)=>{if(!k)return D[i]&&!H.includes(D[i])&&!/סטטוס/.test(D[i])?i:-1; // a header she left blank (her time column) takes the dashboard column in the same place
     const n=seen[k]=(seen[k]||0)+1;let c=-1;for(let i=0,m=0;i<D.length;i++)if(D[i]===k&&++m===n){c=i;break}return c});
   const out=[], fresh=s.entries.filter(e=>!have.has(String(e.p.po)));
+  const dCol=H.findIndex(k=>/^תאריך/.test(k)), hdr=values.map((r,i)=>/פקא/.test(hdrKey(r[poCol]))?i:-1).filter(i=>i>=0);
   for(const e of fresh)e.rows.forEach((row,ri)=>{
     const val=c=>{if(!c)return {f:''};
       if(c.t==='k'||c.t==='g')return {f:''};
@@ -1487,9 +1495,28 @@ function spReportRows(s,values){
       if(typeof v==='string'&&/^[=+\-@]/.test(v))v="'"+v;
       return {f:v};
     };
-    out.push({po:ri?'':String(e.p.po),cells:map.map(c=>c<0?{f:''}:(ri&&c===0?{f:''}:val(row[c])))});
+    out.push({po:ri?'':String(e.p.po),date:Math.floor(Number(dateVal(e.p))||0),cells:map.map(c=>c<0?{f:''}:(ri&&c===0?{f:''}:val(row[c])))});
   });
-  return {rows:out,width:H.length,pos:new Set(fresh.map(e=>e.p.po)).size};
+  return {rows:out,width:H.length,pos:new Set(fresh.map(e=>e.p.po)).size,head:values[hi],hi,dCol,hdr,values};
+}
+// where each date's new rows go (0-based index in her used range): after the last row of that date, before a
+// sum row that closes the block; or as a new block (header + rows) before the first block of a later date
+function spPlaceRows(x,formulas){
+  const V=x.values, dc=x.dCol, dOf=r=>{const v=Number(V[r]&&V[r][dc]);return v>20000?Math.floor(v):null};
+  const isSum=r=>(formulas&&formulas[r]||[]).some(f=>/^=\s*SUM\(/i.test(String(f)))&&!V[r].some((v,i)=>i!==dc&&typeof v==='string'&&v.trim());
+  const groups=new Map();x.rows.forEach(r=>{if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r)});
+  const out=[];
+  for(const [d,rows] of groups){
+    let last=-1;for(let r=0;r<V.length;r++)if(dOf(r)===d)last=r;
+    if(last>=0){let at=last+1;if(at<V.length&&isSum(at))at=last; // stay inside the SUM range
+      out.push({at,rows,newBlock:false,date:d});continue}
+    // first header whose block starts with a later date
+    let at=V.length;for(const h of x.hdr){let f=null;for(let r=h+1;r<V.length&&!x.hdr.includes(r);r++){f=dOf(r);if(f!=null)break}if(f!=null&&f>d){at=h;break}}
+    // an empty block (a header with no rows under it) right there is used as is
+    let e=at-1;while(e>=0&&!V[e].some(v=>v!==''&&v!=null))e--;
+    out.push({at,rows,newBlock:!(e>=0&&x.hdr.includes(e)),date:d});
+  }
+  return out.sort((a,b)=>b.at-a.at||b.date-a.date); // bottom first, so the places above stay valid
 }
 async function spAddToReport(){
   const st=$('sp-rep-state');
@@ -1504,20 +1531,37 @@ async function spAddToReport(){
       const r=await spFetch(ws+"/usedRange(valuesOnly=true)?$select=address,values");
       if(r.status===404){plan.push({s,err:'אין גיליון בשם הזה'});continue}
       if(!r.ok)throw new Error('קריאת הגיליון '+s.def.name+' נכשלה ('+r.status+')');
-      const u=await r.json(), last=Number((u.address.split('!')[1]||'').split(':').pop().replace(/\D/g,''))||u.values.length;
-      plan.push({s,ws,last,...spReportRows(s,u.values)});
+      const u=await r.json(), top=Number(((u.address.split('!')[1]||'A1').split(':')[0]).replace(/\D/g,''))||1;
+      plan.push({s,ws,top,...spReportRows(s,u.values)});
     }
     const add=plan.filter(x=>x.rows&&x.rows.length);
     if(!add.length){st.textContent='אין פק"אות חדשות. כל הפק"אות כבר בטבלת הסיכום ('+wb.name+').';btn.disabled=false;return}
     const sumTxt=add.map(x=>x.s.def.name+': '+x.pos).join(' · ');
     if(!confirm('להוסיף לטבלת הסיכום "'+wb.name+'" פק"אות חדשות בצהוב?\n'+sumTxt))throw new Error('בוטל');
+    const J={'Content-Type':'application/json'}, call=(u,m,b)=>spFetch(u,{method:m,headers:J,body:JSON.stringify(b)});
     for(const x of add){
-      const from=x.last+1,to=x.last+x.rows.length,addr='A'+from+':'+colName(x.width-1)+to;
-      const R=x.ws+"/range(address='"+addr+"')";
-      const body={formulas:x.rows.map(r=>r.cells.map(c=>c.f)),numberFormat:x.rows.map(r=>r.cells.map(c=>c.fmt||'General'))};
-      const w=await spFetch(R,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      if(!w.ok)throw new Error('הכתיבה לגיליון '+x.s.def.name+' נכשלה ('+w.status+')');
-      await spFetch(R+'/format/fill',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({color:'#FFFF00'})});
+      const fr=await spFetch(x.ws+"/usedRange?$select=formulas");const fm=fr.ok?(await fr.json()).formulas:null;
+      // her header row look, for new date blocks
+      const hr=x.ws+"/range(address='A"+(x.top+x.hi)+":"+colName(x.width-1)+(x.top+x.hi)+"')";
+      let hf=null,hfo=null;try{hf=await (await spFetch(hr+'/format/fill')).json();hfo=await (await spFetch(hr+'/format/font')).json()}catch(e){}
+      for(const g of spPlaceRows(x,fm)){
+        const n=g.rows.length+(g.newBlock?1:0), r0=x.top+g.at, end=colName(x.width-1);
+        const ins=await call(x.ws+"/range(address='"+r0+":"+(r0+n-1)+"')/insert",'POST',{shift:'Down'});
+        if(!ins.ok)throw new Error('הוספת שורות לגיליון '+x.s.def.name+' נכשלה ('+ins.status+')');
+        let r=r0;
+        if(g.newBlock){
+          const H=x.ws+"/range(address='A"+r+":"+end+r+"')";
+          await call(H,'PATCH',{values:[x.head.map(v=>v==null?'':v)],numberFormat:[x.head.map(()=>'General')]});
+          if(hf&&hf.color)await call(H+'/format/fill','PATCH',{color:hf.color});
+          if(hfo)await call(H+'/format/font','PATCH',{bold:!!hfo.bold,color:hfo.color||'#000000'});
+          r++;
+        }
+        const R=x.ws+"/range(address='A"+r+":"+end+(r+g.rows.length-1)+"')";
+        const w=await call(R,'PATCH',{formulas:g.rows.map(q=>q.cells.map(c=>c.f)),numberFormat:g.rows.map(q=>q.cells.map(c=>c.fmt||'General'))});
+        if(!w.ok)throw new Error('הכתיבה לגיליון '+x.s.def.name+' נכשלה ('+w.status+')');
+        await call(R+'/format/fill','PATCH',{color:'#FFFF00'});
+        await call(R+'/format/font','PATCH',{bold:false,color:'#000000'});
+      }
     }
     const skip=plan.filter(x=>x.err).map(x=>x.s.def.name+' ('+x.err+')');
     st.textContent='נוספו בצהוב לטבלת הסיכום: '+sumTxt+(skip.length?' · לא עודכן: '+skip.join(', '):'');
@@ -1528,6 +1572,77 @@ document.addEventListener('DOMContentLoaded',()=>{
   const l=$('sp-rep-link');l.value=spReportLink();
   l.addEventListener('change',()=>{try{localStorage.setItem('spReport',l.value.trim())}catch(e){}});
   $('btn-sp-rep').addEventListener('click',spAddToReport);
+});
+/* ---- monthly orders workbook in SharePoint (yarin, "הזמנות צבא <month>"): one sheet per delivery date, same
+   columns as the trays file. POs the date's sheet doesn't have yet go into its table, after the last filled
+   row (into the empty template rows first), highlighted yellow; her calculated columns are left alone ---- */
+const SP_TAF_DEFAULT='https://leebarltd.sharepoint.com/:x:/s/leebar/IQCBwvHQ95TXTJV3myTvG7F6AWCXuPVLSZJIjPSyHIXW4wE?e=pekf4j';
+const spTafLink=()=>{let v='';try{v=localStorage.getItem('spTaf')||''}catch(e){}return v||SP_TAF_DEFAULT};
+// her sheet for a date: the name has d.m (e.g. "חמישי 29.10.2026", "שני 19.10.26")
+const spTafSheet=(names,d)=>names.find(n=>new RegExp('(^|\\D)'+d.getDate()+'\\.'+(d.getMonth()+1)+'(\\.|$|\\s)').test(n));
+// A..Q of the trays file; L (total) is her table's formula, so it's left out (null = not written)
+function spTafCells(r,first){
+  const t=r.hh!=null?(r.hh*60+(r.mm||0))/1440:'';
+  const txt=v=>v==null?'':(typeof v==='string'&&/^[=+\-@]/.test(v)?"'"+v:v);
+  return {f:[first?(/^\d+$/.test(r.po)?Number(r.po):r.po):'','',txt(r.contact),txt(r.phone),txt(r.extraName),txt(r.extraPhone),txt(r.address),txt(r.h),
+      r.I??'',r.J??'',r.K??'',null,r.date?excelDate(r.date):'',t,r.ampm||'',txt(r.P),1],
+    fmt:['General','General','General','@','General','@','General','General','General','General','General',null,'dd/mm/yyyy','h:mm','General','General','General']};
+}
+async function spAddToTaf(){
+  const st=$('sp-taf-state');
+  if(!result){st.textContent='צריך קודם להעלות את שני הקבצים.';return}
+  if(!spAcct){st.textContent='צריך קודם להתחבר עם Microsoft (למעלה, ליד "שמירה משותפת").';return}
+  const btn=$('btn-sp-taf');btn.disabled=true;st.textContent='בודק מה כבר יש בקובץ ההזמנות...';
+  const J={'Content-Type':'application/json'}, call=(u,m,b)=>spFetch(u,{method:m,headers:J,body:JSON.stringify(b)});
+  try{
+    const wb=await spItem(spTafLink());
+    const lr=await spFetch(wb.base+'/worksheets?$select=name');if(!lr.ok)throw new Error('קריאת הגיליונות נכשלה ('+lr.status+')');
+    const names=(await lr.json()).value.map(w=>w.name);
+    const days=result.dates.filter(d=>included.has(d.key)&&d.rows.length), plan=[], missing=[];
+    for(const d of days){
+      const name=d.date&&spTafSheet(names,d.date);if(!name){missing.push(d.name);continue}
+      const ws=wb.base+"/worksheets/"+encodeURIComponent(name);
+      const u=await (await spFetch(ws+"/usedRange(valuesOnly=true)?$select=address,values")).json();
+      const top=Number(((u.address.split('!')[1]||'A1').split(':')[0]).replace(/\D/g,''))||1, V=u.values||[];
+      const hi=V.findIndex(r=>/פקא/.test(hdrKey(r[0])));
+      if(hi<0){missing.push(d.name+' (אין שורת כותרות)');continue}
+      const have=new Set(V.slice(hi+1).map(r=>String(r[0]??'').trim()).filter(v=>/^\d{6,}$/.test(v)));
+      const fresh=d.rows.filter(r=>!have.has(String(r.po)));
+      if(!fresh.length)continue;
+      const rows=fresh.map((r,i)=>spTafCells(r,!i||fresh[i-1].po!==r.po));
+      // last row with a name or address; rows after it inside her table are empty template rows
+      let last=hi;for(let i=hi+1;i<V.length;i++)if([2,6,8].some(c=>String(V[i][c]??'').replace(/\u00a0/g,'').trim()))last=i;
+      let tbl=null;const tr=await spFetch(ws+'/tables?$select=id,name');
+      if(tr.ok){const t=(await tr.json()).value[0];if(t){const a=await (await spFetch(wb.base+'/tables/'+encodeURIComponent(t.id)+'/range?$select=address')).json();
+        const m=(a.address.split('!')[1]||'').match(/\d+$/);tbl={id:t.id,end:m?Number(m[0]):0}}}
+      plan.push({d,name,ws,top,last,rows,tbl,pos:new Set(fresh.map(r=>r.po)).size});
+    }
+    if(!plan.length){st.textContent='אין פק"אות חדשות להוסיף'+(missing.length?' · אין גיליון ל: '+missing.join(', '):'')+'.';btn.disabled=false;return}
+    const sumTxt=plan.map(x=>x.name+': '+x.pos).join(' · ');
+    if(!confirm('להוסיף לקובץ "'+wb.name+'" פק"אות חדשות בצהוב?\n'+sumTxt+(missing.length?'\n\nאין גיליון לתאריכים: '+missing.join(', '):'')))throw new Error('בוטל');
+    for(const x of plan){
+      const r0=x.top+x.last+1, n=x.rows.length, r1=r0+n-1;
+      // grow her table when its empty rows aren't enough, so the new rows get its formulas and look
+      if(x.tbl&&r1>x.tbl.end){
+        // blank rows (no values), so her calculated columns fill themselves
+        for(let k=x.tbl.end;k<r1;k++){const add=await call(wb.base+'/tables/'+encodeURIComponent(x.tbl.id)+'/rows/add','POST',{index:null});
+          if(!add.ok)throw new Error('הגדלת הטבלה בגיליון '+x.name+' נכשלה ('+add.status+')')}
+      }
+      // A..K and M..Q, around her total column L
+      const put=async(c0,c1,i0,i1)=>{const R=x.ws+"/range(address='"+colName(c0)+r0+":"+colName(c1)+r1+"')";
+        const w=await call(R,'PATCH',{formulas:x.rows.map(q=>q.f.slice(i0,i1)),numberFormat:x.rows.map(q=>q.fmt.slice(i0,i1))});
+        if(!w.ok)throw new Error('הכתיבה לגיליון '+x.name+' נכשלה ('+w.status+')')};
+      await put(0,10,0,11);await put(12,16,12,17);
+      await call(x.ws+"/range(address='A"+r0+":Z"+r1+"')/format/fill",'PATCH',{color:'#FFFF00'});
+    }
+    st.textContent='נוספו בצהוב לקובץ ההזמנות: '+sumTxt+(missing.length?' · אין גיליון ל: '+missing.join(', '):'');
+  }catch(e){st.textContent=e.message==='בוטל'?'לא נוסף דבר.':'עדכון קובץ ההזמנות נכשל: '+(e.message||e)}
+  btn.disabled=false;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const l=$('sp-taf-link');l.value=spTafLink();
+  l.addEventListener('change',()=>{try{localStorage.setItem('spTaf',l.value.trim())}catch(e){}});
+  $('btn-sp-taf').addEventListener('click',spAddToTaf);
 });
 const waLoad=()=>shLoad('waSent');
 const waSave=m=>shSave('waSent',m);
@@ -1751,7 +1866,15 @@ function renderLabels(){
   $('taf-count').textContent=taf.length?taf.length+' פק"אות · '+taf.reduce((a,j)=>a+j.n,0)+' מדבקות מטבח · '+taf.length*2+' מדבקות שילוח · הודפסו '+pt+' מתוך '+taf.length:'';
   $('btn-lbl').disabled=$('btn-ship').disabled=$('btn-rep').disabled=!jobs.length;
   $('btn-taf-print').disabled=$('btn-taf-ship').disabled=$('btn-taf-rep').disabled=!taf.length;
+  lblFilter('lbl');lblFilter('taf');
 }
+// PO search over a label table (yarin): rows whose text has the typed digits or words stay visible
+function lblFilter(pre){
+  const q=clean($(pre+'-search').value), qd=q.replace(/\D/g,''), rows=[...$(pre+'-body').querySelectorAll('tr')].filter(t=>t.cells.length>1);let n=0;
+  rows.forEach(t=>{const tx=t.textContent, ok=!q||(qd&&qd.length===q.replace(/\s/g,'').length?tx.replace(/\D/g,'').includes(qd):tx.includes(q));t.hidden=!ok;if(ok)n++});
+  $(pre+'-found').textContent=q?(n?n+' שורות':'לא נמצא'):'';
+}
+$('lbl-search').addEventListener('input',()=>lblFilter('lbl'));$('taf-search').addEventListener('input',()=>lblFilter('taf'));
 /* ---- תפזורת labels as Excel, from yarin's workbook "הזמנות תפזורת M מדבקות למטבח ולשילוח": the first label of
    "מדבקות מטבח" (26 rows, columns A-E, B-C hidden, 39%) and of "מדבקות שילוח" (29 rows, columns A-B, 47%),
    same cell styles and printer settings, one label per page, values instead of her formulas ---- */
