@@ -191,7 +191,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-6</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-7</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -1633,6 +1633,16 @@ async function spAddToTaf(){
         const w=await call(R,'PATCH',{formulas:x.rows.map(q=>q.f.slice(i0,i1)),numberFormat:x.rows.map(q=>q.fmt.slice(i0,i1))});
         if(!w.ok)throw new Error('הכתיבה לגיליון '+x.name+' נכשלה ('+w.status+')')};
       await put(0,10,0,11);await put(12,16,12,17);
+      // a sheet without her table (e.g. Fridays) gets the trays file's formulas: total in L, kitchen columns R..Z
+      if(!x.tbl){
+        const F=n=>{const has=w=>`ISNUMBER(SEARCH("${w}", $H${n}))`, tfev=`OR(${has('תפזורת')}, ${has('אירוע')})`;
+          return {L:`=IF(COUNT(I${n}:K${n}),SUM(I${n}:K${n}),"")`,RZ:[`=IF(${has('אירוע')}, $I${n} * 0.5 / 10, "")`,`=IF(${has('אירוע')}, $I${n} * 0.5 / 25, "")`,`=IF(${has('אירוע')}, $I${n} * 0.33 / 25, "")`,
+            `=IF(${has('תפזורת')}, $I${n} * 0.5 / 25, IF(${has('אירוע')}, $I${n} * 0.33 / 25, ""))`,`=IF(${has('תפזורת')}, $I${n} * 0.5 / 25, IF(${has('אירוע')}, $I${n} * 0.33 / 25, ""))`,
+            `=IF(${tfev}, IFERROR(J${n}/5, ""), "")`,`=IF(${tfev}, (SUM($I${n}:$J${n})*0.5)/35, "")`,`=IF(${tfev}, (SUM($I${n}:$J${n})*0.5)/35, "")`,`=IF(${tfev}, (SUM($I${n}:$J${n})*1)/70, "")`]}};
+        const L=[],RZ=[];for(let n=r0;n<=r1;n++){const f=F(n);L.push([f.L]);RZ.push(f.RZ)}
+        for(const [c0,c1,v] of [[11,11,L],[17,25,RZ]]){const w=await call(x.ws+"/range(address='"+colName(c0)+r0+":"+colName(c1)+r1+"')",'PATCH',{formulas:v});
+          if(!w.ok)throw new Error('כתיבת הנוסחאות בגיליון '+x.name+' נכשלה ('+w.status+')')}
+      }
       await call(x.ws+"/range(address='A"+r0+":Z"+r1+"')/format/fill",'PATCH',{color:'#FFFF00'});
     }
     st.textContent='נוספו בצהוב לקובץ ההזמנות: '+sumTxt+(missing.length?' · אין גיליון ל: '+missing.join(', '):'');
