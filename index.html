@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-17</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-18</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -2415,6 +2415,23 @@ function renderRouteKitchen(){
     const b=document.createElement('button');b.type='button';b.className='primary';b.textContent=name+' · '+n;
     b.title=n+' מדבקות, לפי סוג מנה ושעת אספקה';
     b.addEventListener('click',()=>saveFiles([{name:'מדבקות '+name+' '+tag+'.xlsx',blob:new Blob([cat==='תפזורת'?buildTafXlsx(jobs,false):buildLabelsXlsx(jobs,true)],{type:XMIME})}]));
+    box.appendChild(b);
+  }
+  // shipping labels (yarin 2026-10-28): 2 per PO in line order, no חמין / חלקי מנה; several meal types of one PO share its labels
+  const lineNo=j=>{const m=/^קו (\d+)/.exec(j.line||'');return m?+m[1]:99}, ship=new Map();
+  for(const j of all){
+    if(j.cat==='חמין'||j.cat==='חלקי מנה'||j.labelPo)continue;
+    const s=ship.get(j.po);
+    if(!s){ship.set(j.po,{...j,fmt:j.fmt==='jach'?'jach':undefined,n:2});continue}
+    if(!String(s.type).split(' + ').includes(j.type))s.type+=' + '+j.type;
+    for(const f of ['I','J','K','tot'])s[f]=(+s[f]||0)+(+j[f]||0);
+    if(j.notes&&!String(s.notes||'').includes(j.notes))s.notes=s.notes?s.notes+' | '+j.notes:j.notes;
+  }
+  const sj=[...ship.values()].sort((a,b)=>lineNo(a)-lineNo(b)||t(a)-t(b)||String(a.address).localeCompare(String(b.address),'he')||a.po.localeCompare(b.po));
+  if(sj.length){
+    const b=document.createElement('button');b.type='button';b.className='primary';b.textContent='שילוח לפי קווים · '+sj.length*2;
+    b.title='2 מדבקות מכל פק"א, לפי סדר הקווים (בלי חמין וחלקי מנה)';
+    b.addEventListener('click',()=>saveFiles([{name:'מדבקות שילוח לפי קווים '+tag+'.xlsx',blob:new Blob([buildLabelsXlsx(sj,true)],{type:XMIME})}]));
     box.appendChild(b);
   }
 }
