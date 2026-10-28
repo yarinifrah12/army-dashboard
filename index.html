@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-16</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-17</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -1822,11 +1822,11 @@ function labelSheetXml(labels){
     const row=(n,cells,ht)=>X.push(`<row r="${R(n)}"${ht?` ht="${ht}" customHeight="1"`:''}>${cells.join('')}</row>`);
     const L=(n,lab,v,st,ht)=>row(n,[cellXml('A'+R(n),lab,19),cellXml('B'+R(n),v,st)],ht);
     row(1,[cellXml('A'+R(1),' ',18)]);
+    // line (קו) from the delivery routes, right above מס פק"א (yarin's photo); rows must stay in ascending order or Excel drops them
+    if(j.line)row(3,[cellXml('A'+R(3),j.line,21),cellXml('B'+R(3),j.driver?'נהג: '+j.driver:'',21)]);
     const po=j.labelPo||j.po;L(4,'מס פק"א:',/^\d+$/.test(po)?Number(po):po,20);
     row(5,[cellXml('A'+R(5),'',21),cellXml('B'+R(5),'',21)]);
     L(6,'שם לקוח:',j.contact,22);L(7,'מס טלפון:',j.phone,23);L(8,'כתובת:',j.address,22,78.75);L(9,'סוג מנה:',j.type,22);
-    // line (קו) from the delivery routes, in the row above the PO like in yarin's holiday label format
-    if(j.line)row(3,[cellXml('A'+R(3),j.line,21),cellXml('B'+R(3),j.driver?'נהג: '+j.driver:'',21)]); // yarin's photo: the line right above מס פק"א, in A
     const RL=j.rowLabels||['בשרי:','טיבעוני:','אלרגניים:'];
     L(10,RL[0],j.I,22);L(11,RL[1],j.J,22);L(12,RL[2],j.K,22);L(13,'סה"כ מנות:',j.tot,22);
     L(14,'תאריך:',j.date?excelDate(j.date):'',24);L(15,'שעת אספקה:',j.hh!=null?(j.hh*60+(j.mm||0))/1440:'',25);L(16,'הערות:',j.notes,28,27);
