@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-13</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-15</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -238,7 +238,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג מנה</th><th>מנות</th><th>קרטונים חמים</th><th>קרטון סלטים</th><th>מדבקות מטבח</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="taf-body"></tbody></table></div>
     <div id="route-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">קווי חלוקה</h2><span class="status" id="route-count"></span></div>
-      <div class="bar"><span class="route-pick"><label for="route-day">יום אספקה</label><select id="route-day"></select></span><button class="primary" id="btn-route">הורדת קובץ קווי חלוקה</button><button class="ghost" id="btn-route-reset">חלוקה מחדש לפי אזורים</button></div>
+      <div class="bar"><span class="route-pick"><label for="route-day">יום אספקה</label><select id="route-day"></select></span><button class="primary" id="btn-route">הורדת קובץ קווי חלוקה</button><button class="ghost" id="btn-route-reset">חלוקה מחדש לפי אזורים</button><button class="primary" id="btn-route-kitchen">כל המדבקות לפי סוג מנה</button></div>
       <small class="status">כל אזור הוא קו, לפי הקווים שלך מ-4.9 עד 16.10. אפשר להעביר מקום לקו אחר בטבלה ולכתוב נהג לכל קו. השינויים נשמרים בדפדפן הזה, ובימי שישי מספר הקו מודפס מעל מספר הפק"א בכל המדבקות והעותקים.</small>
       <div class="sheets" id="route-lines"></div>
       <div class="tablebox" style="max-height:60vh"><table class="wa"><thead><tr><th>קו</th><th>מקום</th><th>אזור</th><th>פק"אות</th><th>מה יוצא</th><th>מנות</th><th>שעה</th></tr></thead><tbody id="route-body"></tbody></table></div>
@@ -1824,8 +1824,8 @@ function labelSheetXml(labels){
     const po=j.labelPo||j.po;L(4,'מס פק"א:',/^\d+$/.test(po)?Number(po):po,20);
     row(5,[cellXml('A'+R(5),'',21),cellXml('B'+R(5),'',21)]);
     L(6,'שם לקוח:',j.contact,22);L(7,'מס טלפון:',j.phone,23);L(8,'כתובת:',j.address,22,78.75);L(9,'סוג מנה:',j.type,22);
-    // line (קו) from the delivery routes, at the top like in yarin's holiday label format
-    if(j.line){row(2,[cellXml('A'+R(2),j.line,21),cellXml('B'+R(2),j.driver?'נהג: '+j.driver:'',21)]);if(!j.driver)M.push(`A${R(2)}:B${R(2)}`)}
+    // line (קו) from the delivery routes, in the row above the PO like in yarin's holiday label format
+    if(j.line)row(3,[cellXml('A'+R(3),j.line,21),cellXml('B'+R(3),j.driver?'נהג: '+j.driver:'',21)]); // yarin's photo: the line right above מס פק"א, in A
     const RL=j.rowLabels||['בשרי:','טיבעוני:','אלרגניים:'];
     L(10,RL[0],j.I,22);L(11,RL[1],j.J,22);L(12,RL[2],j.K,22);L(13,'סה"כ מנות:',j.tot,22);
     L(14,'תאריך:',j.date?excelDate(j.date):'',24);L(15,'שעת אספקה:',j.hh!=null?(j.hh*60+(j.mm||0))/1440:'',25);L(16,'הערות:',j.notes,28,27);
@@ -2397,6 +2397,19 @@ $('btn-route').addEventListener('click',()=>{
   const f=d&&d.date?d.date.getDate()+'.'+(d.date.getMonth()+1)+'.'+d.date.getFullYear():routeDay;
   saveFiles([{name:'קווי חלוקה '+f+'.xlsx',blob:new Blob([buildRoutesXlsx(plan)],{type:XMIME})}]);
   renderLabels();
+});
+// all labels of the day grouped by meal type, each type by delivery time, so the kitchen can split them (yarin 2026-10-28)
+const KITCHEN_ORDER=['גחנון','חמין','כריך שניצל','חמגשיות','חלקי מנה','אירוע'];
+$('btn-route-kitchen').addEventListener('click',()=>{
+  const d=result&&result.dates.find(x=>x.key===routeDay);if(!d)return;
+  const t=j=>(j.hh??99)*60+(j.mm??0), all=labelJobs([d]);
+  const ord=c=>{const i=KITCHEN_ORDER.indexOf(c);return i<0?99:i};
+  const sort=l=>l.map((j,i)=>({j,i})).sort((a,b)=>ord(a.j.cat)-ord(b.j.cat)||String(a.j.type).localeCompare(String(b.j.type),'he')||t(a.j)-t(b.j)||String(a.j.address).localeCompare(String(b.j.address),'he')||a.j.po.localeCompare(b.j.po)||a.i-b.i).map(x=>x.j);
+  const main=sort(all.filter(j=>!j.fmt||j.fmt==='jach')), taf=sort(all.filter(j=>j.fmt==='taf'));
+  const tag=d.date?d.date.getDate()+'.'+(d.date.getMonth()+1):'', files=[];
+  if(main.length)files.push({name:'מדבקות לפי סוג מנה '+tag+'.xlsx',blob:new Blob([buildLabelsXlsx(main,true)],{type:XMIME})});
+  if(taf.length)files.push({name:'מדבקות מטבח תפזורת לפי שעה '+tag+'.xlsx',blob:new Blob([buildTafXlsx(taf,false)],{type:XMIME})});
+  if(files.length)saveFiles(files);
 });
 $('btn-route-reset').addEventListener('click',()=>{
   if(!routeDay)return;
