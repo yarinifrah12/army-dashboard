@@ -132,6 +132,21 @@ table.wa td.unk{color:var(--warn);background:var(--warn-soft)}
 .wa-find input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .wa-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
 h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px 0 0}
+.rl{display:flex;align-items:flex-start;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.rl i{flex:none;width:12px;align-self:stretch;min-height:34px;border-radius:4px;border:1px solid var(--line)}
+.rl div{min-width:0;display:flex;flex-direction:column;gap:4px;flex:1}
+.rl b{font-family:var(--f-display);font-weight:500}
+.rl span{color:var(--muted);font-size:.88rem}
+.rl span.warn{color:var(--warn)}
+.rl input,.route-pick select,.wa select{font:inherit;padding:5px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0}
+.wa select{border-inline-start-width:8px;font-size:.88rem}
+.rl button.small{padding:5px 12px;font-size:.88rem;align-self:flex-start}
+.rl.none{border-color:var(--warn);background:var(--warn-soft)}
+.wa tr.unk td{background:var(--warn-soft)}
+.route-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.route-pick label{font-weight:600}
+.wa td.rwrap{white-space:normal;min-width:150px;max-width:340px}
+.wa td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -191,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 20.10-7</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-13</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -212,7 +227,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <div class="legend"><span><i class="sw" style="background:var(--green-row)"></i>אלרגניים (חמגשית טבעונית/צמחונית לל"ג)</span><span><i class="sw" style="background:var(--yellow-row)"></i>לבדיקה ידנית</span></div>
     <div id="lbl-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">מדבקות</h2><span class="status" id="lbl-count"></span></div>
-      <div class="bar"><button class="primary" id="btn-lbl" disabled>הורדת קובץ מדבקות</button><button class="primary" id="btn-ship" disabled>מדבקות לשילוח (2 מכל שורה)</button><button class="primary" id="btn-rep" disabled>מדבקות דיווח (3 מכל שורה)</button><span class="status">קובץ אקסל בפורמט המדבקה (מדפסת Godex), מדבקה בכל עמוד וכל המדבקות של פק"א ברצף. נכנסים הימים שמסומנים למעלה.</span></div>
+      <div class="bar"><button class="primary" id="btn-lbl" disabled>הורדת קובץ מדבקות</button><button class="primary" id="btn-ship" disabled>מדבקות לשילוח (2 מכל שורה)</button><button class="primary" id="btn-rep" disabled>מדבקות דיווח (3 מכל שורה)</button><button class="primary" id="btn-jach" disabled>מדבקות גחנון (2 מכל פק"א)</button><span class="status">קובץ אקסל בפורמט המדבקה (מדפסת Godex), מדבקה בכל עמוד וכל המדבקות של פק"א ברצף. נכנסים הימים שמסומנים למעלה.</span></div>
       <div class="wa-find"><label for="lbl-search">חיפוש פק"א</label><input id="lbl-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א או סוג מנה"><span class="status" id="lbl-found"></span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג</th><th>סוג מנה</th><th>מנות</th><th>ק"ג</th><th>חישוב</th><th>מדבקות</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="lbl-body"></tbody></table></div>
     </div>
@@ -221,6 +236,12 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <div class="bar"><button class="primary" id="btn-taf-print" disabled>מדבקות מטבח תפזורת</button><button class="primary" id="btn-taf-ship" disabled>מדבקות שילוח תפזורת (2 מכל פק"א)</button><button class="primary" id="btn-taf-rep" disabled>מדבקות דיווח תפזורת (3 מכל פק"א)</button><span class="status">קובצי אקסל בפורמט התפזורת. מדבקות מטבח: כמות המדבקות = הקרטונים החמים. מדבקות שילוח: 2 לכל פק"א.</span></div>
       <div class="wa-find"><label for="taf-search">חיפוש פק"א</label><input id="taf-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א או סוג מנה"><span class="status" id="taf-found"></span></div>
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג מנה</th><th>מנות</th><th>קרטונים חמים</th><th>קרטון סלטים</th><th>מדבקות מטבח</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="taf-body"></tbody></table></div>
+    <div id="route-box" hidden style="display:flex;flex-direction:column;gap:10px">
+      <div class="wa-head"><h2 class="sec">קווי חלוקה</h2><span class="status" id="route-count"></span></div>
+      <div class="bar"><span class="route-pick"><label for="route-day">יום אספקה</label><select id="route-day"></select></span><button class="primary" id="btn-route">הורדת קובץ קווי חלוקה</button><button class="ghost" id="btn-route-reset">חלוקה מחדש לפי אזורים</button></div>
+      <small class="status">כל אזור הוא קו, לפי הקווים שלך מ-4.9 עד 16.10. אפשר להעביר מקום לקו אחר בטבלה ולכתוב נהג לכל קו. השינויים נשמרים בדפדפן הזה, ובימי שישי מספר הקו מודפס מעל מספר הפק"א בכל המדבקות והעותקים.</small>
+      <div class="sheets" id="route-lines"></div>
+      <div class="tablebox" style="max-height:60vh"><table class="wa"><thead><tr><th>קו</th><th>מקום</th><th>אזור</th><th>פק"אות</th><th>מה יוצא</th><th>מנות</th><th>שעה</th></tr></thead><tbody id="route-body"></tbody></table></div>
     </div>
   </div>
 
@@ -232,11 +253,13 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
   </div>
 
   <ul class="rules">
+    <li><b>קווי חלוקה:</b> כל הפק"אות של היום שנבחר (חמגשיות, תפזורת, גחנון, חמין, כריכים, חלקי מנה, אירועים ובורקס) מקובצות לפי מקום, וכל מקום משובץ לאזור לפי מילים בכתובת. כל אזור הוא קו, ומספרי הקווים והצבעים כמו בקבצים שלך. אירועים עם הפעלה (עמדות) לא נכנסים לקווים. גחנון: טיבעוני = כמות קרטונים (מארזים חלקי 3, מעוגל למעלה), צליאק = כמות שתייה (מארזים כפול 10). בקובץ: הקו בעמודה B בצבע שלו, הנהג בעמודה R על כל הקו, וגיליון "סיכום קווים" עם מנות ושעות לכל קו.</li>
     <li><b>טבלת סיכום · אירוע צבא עם הפעלה:</b> פק"אות עם דוכן או אירוע במזנון/כיבוד עשיר. כל דוכן בשורה משלו: הכמות בעמודת כמות עמדות והשם בעמודת עמדות, ו"תוספת מנה לדוכן" נכנסת לתוספת לעמדות. תפעול תמיד ריק. כפתור הוואטסאפ שולח ללקוח את מספר הפק"א, התאריך, הכתובת והקישור.</li>
     <li><b>טבלת סיכום · אירועים ללא הפעלה:</b> אירוע או כיבוד "בהפעלת היחידה". תוספת מנה עיקרית נכנסת לתוספת מנות, לל"ג לצליאק, וסה"כ הוא הסכום של שלושתם.</li>
     <li><b>טבלת סיכום · כריכים עזה:</b> בשרי במנות רגילות, טבעוני בטבעוני, חמגשיות לל"ג באותה פק"א בצליאק. כשבכתובת כתוב סוג וכמות ("50 חלה שניצל", "50 פרנה פרגית") נפתחת שורה לכל סוג.</li>
     <li><b>טבלת סיכום · חלקי מנה:</b> פק"א שיש בה ארוחה מוכנה בתפזורת לא נכנסת לגיליון, היא בקובץ החמגשיות והתפזורת. המנה העיקרית במנות, וירקנית, פחמימה וסלט בק"ג (0.09, 0.18 ו-0.18 ק"ג למנה). ארוזית בוקר, סביח, מרק, גחנון וחמין נכנסים לגיליונות שלהם לפי שם הפריט. חלקי ארוחה חמין (בשרי או טבעוני) נכנסים לגיליון חמין. חמין לל"ג או אלרגני נספר בעמודת צליאק, וסה"כ הוא חמין + טבעוני + צליאק.</li>
     <li><b>מדבקות תפזורת:</b> מדבקת מטבח: גסטרונומים לפי עיקרית/22, טבעוני/22, פחמימה (ק"ג)/4.5, ירקנית/6, סלטים/3 (ק"ג למנה 0.18, 0.09, 0.2, בלי הצליאק). קרטונים חמים = (עיקרית + טבעוני + פחמימה + ירקנית)/3, ועוד 1 אם יש צליאק, ומספר המדבקות = הקרטונים החמים. קרטון סלטים = סלטים/6. מדבקת שילוח: 2 לכל פק"א, עם רטבים, לחם (/10), סירופ (/50), עוגות ופרי (/2), סכו"ם, צלחות וכוסות (1 למנה), מפות ושקיות (/33) וכפות הגשה (/16). תמיד מעגלים כלפי מעלה, חוץ מהמספרים במדבקת השילוח שמעוגלים כמו באקסל.</li>
+    <li><b>מדבקות חמין ואירועים:</b> חמין: מדבקה לכל 50 מנות, מינימום 2. אירוע ללא הפעלה: מדבקה לכל 10 מנות, מינימום 5. גחנון: 2 מדבקות לכל פק"א.</li>
     <li><b>מדבקות:</b> קובץ "מדבקות לשילוח" נפרד: 2 עותקים מכל שורה בטבלת המדבקות, כולל שורות ההמשך עם 0 בפק"א. חמגשיות וכריכי שניצל: מדבקה לכל 30 מנות, מינימום 3. חלקי מנה: קודם מדבקות המנות (בשרי + טבעוני + אלרגניים, חלקי 75), ואחריהן מדבקות הק"ג (ירקנית, פחמימה, סלט, חלקי 14) עם 0 בפק"א, שמסמן המשך של הפק"א שלפניה. תמיד מעגלים כלפי מעלה. כל המדבקות של פק"א יוצאות ברצף, ורק אז הפק"א הבאה.</li>
     <li>לכל תאריך אספקה נוצר גיליון משלו, ואחריו גיליון "נוספות" של אותו תאריך. נכנסים כל התאריכים שמופיעים בשני הקבצים. אפשר להעלות גם רק MultiReportView, כי יש בו את פרטי הפק"א.</li>
     <li>נכנסות כל הפק"אות חוץ מפק"אות בסטטוס "לא פעיל" או "בוטלה" בדיביסי. בפק"א חדשה כתוב בהערות "פק"א חדשה (טרם אושרה)". כשיש לפק"א גם מקורית וגם עדכון, נלקח העדכון.</li>
@@ -347,6 +370,9 @@ function parseAddress(raw){
     const pm=l.match(PHONE);
     if(pm){
       const before=l.slice(0,pm.index), after=stripQ(l.slice(pm.index+pm[0].length));
+      // only a contact on the first line and the place on the next one: "אליה מוסיקנט 054…" / "כפר עציון" (yarin 2026-10-28)
+      const nextL=lines[1]||'';
+      if(i===0&&!after&&nextL&&!PHONE.test(nextL)&&!INFO.test(nextL)&&!INFO.test(before)&&clean(before).split(' ').length<=3){setContact(before,pm[0]);lastPlain=null;return}
       if(i===0&&!INFO.test(before)){                 // phone on the address line: "בסיס ברקאי אוראל 050…"
         const b=before.trim(); const ci=b.lastIndexOf(',');
         const name=ci>=0?b.slice(ci+1):b.split(' ').pop(); const rest=ci>=0?b.slice(0,ci):b.split(' ').slice(0,-1).join(' ');
@@ -511,8 +537,10 @@ function build(reportRows,multiItems,opts={}){
     }
     // תפזורת: vegan count comes from the address and is taken out of the regular portions
     for(const x of groups.values())if(x.taf&&A.vegan){x.J+=A.vegan;x.I=Math.max(0,x.I-A.vegan)}
+    // trays the customer asked to get cold ("מצונן" in the address) get a cold meal type, like תפזורת and events (yarin 2026-10-28)
+    const coldH=h=>!A.cold||!/^חמגשית/.test(h)||/מצונ/.test(h)?h:/ללא נלווים/.test(h)?h+'- מצונן קר':h+'- קר מצונן';
     for(const x of groups.values())
-      rows.push({...base,h:x.h,I:x.I,J:x.J,K:x.K,P:[x.allergen?x.allergen+' אלרגניים טבעוני':'',x.allergenV?x.allergenV+' אלרגניים צמחוני':''].filter(Boolean).join(', '),allergen:(x.allergen+x.allergenV)>0,flag:x.unknown?'review':''});
+      rows.push({...base,h:coldH(x.h),I:x.I,J:x.J,K:x.K,P:[x.allergen?x.allergen+' אלרגניים טבעוני':'',x.allergenV?x.allergenV+' אלרגניים צמחוני':''].filter(Boolean).join(', '),allergen:(x.allergen+x.allergenV)>0,flag:x.unknown?'review':''});
   }
   const byTime=(a,b)=>(a.dateKey<b.dateKey?-1:a.dateKey>b.dateKey?1:0)||((a.hh??99)*60+(a.mm??0))-((b.hh??99)*60+(b.mm??0))||a.address.localeCompare(b.address,'he')||a.po.localeCompare(b.po);
   rows.sort(byTime);others.sort(byTime);
@@ -1246,7 +1274,7 @@ function renderAll(){
 function updateButtons(){
   const k=!!(result&&result.dates.length&&included.size), s=!!sumRes;
   $('btn-dl').disabled=!k;$('btn-sum').disabled=!s;$('btn-both').disabled=!(k&&s);
-  renderLabels();
+  renderLabels();renderRoutes();
 }
 function renderSummary(){
   $('sum-box').hidden=!sumRes;$('sheets').innerHTML='';$('sum-notes').innerHTML='';
@@ -1706,7 +1734,7 @@ $('wa-search').addEventListener('input',waFilter);
 /* ---- labels (מדבקות) for the Godex label printer: yarin's label sheet ("פורמט מדבקה"), one label per page, all labels of a PO in a row ---- */
 // how many labels (yarin): trays and schnitzel sandwiches = portions/30, at least 3; חלקי מנה = portions/75 plus kg/14; always rounded up
 const up=x=>Math.ceil(x-1e-9);
-const LBL_CATS=['חמגשיות','תפזורת','כריך שניצל','חלקי מנה'];
+const LBL_CATS=['חמגשיות','תפזורת','כריך שניצל','חלקי מנה','חמין','אירוע'];
 // kitchen calculation of the תפזורת label (yarin's formulas): gastronorms per item, then hot cartons and salad cartons
 function tafCalc(I,J,K){
   const net=I+J+K-K, carb=net*0.18, veg=net*0.09, sal=net*0.2;
@@ -1739,6 +1767,17 @@ function labelJobs(days){
         notes:String(v(14)||'').split(' | ').filter(x=>/אלרג/.test(x)).join(', '),calc:'מנות/30, מינימום 3',n:Math.max(3,up(tot/30))});
     }
   }
+  // yarin 2026-10-28: חמין מצונן = portions/50, at least 2; אירוע (ללא הפעלה) = portions/10, at least 5. Same numbers as the delivery lines
+  for(const [sn,cat,f,min,calc] of [['חמין','חמין',r=>/^חמין/.test(r.h),2,'מנות/50, מינימום 2'],['אירועים ללא הפעלה','אירוע',r=>/^אירוע ללא הפעלה/.test(r.h),5,'מנות/10, מינימום 5']]){
+    const sh=sheet(sn);
+    for(const e of sh?sh.entries:[]){
+      if(!keys.has(e.p.dateKey))continue;
+      for(const r of otherRouteRows(e.p).filter(f)){
+        const I=+r.I||0,J=+r.J||0,K=+r.K||0,tot=I+J+K;if(!tot)continue;
+        jobs.push({...base(e.p),cat,type:r.h,I,J,K,tot,notes:e.p.notes||'',calc,n:Math.max(min,up(tot/(cat==='חמין'?50:10)))});
+      }
+    }
+  }
   const pt=sheet('חלקי מנה'), side=/ירקנית|פחמימה|סלט/;
   for(const e of pt?pt.entries:[]){
     if(!keys.has(e.p.dateKey))continue;
@@ -1757,6 +1796,17 @@ function labelJobs(days){
     if(kg){const k=n=>{const x=kgs.find(y=>y[0]===n);return x?kgTxt(x[1])+' ק"ג '+n:0};
       jobs.push({...base(e.p),labelPo:'0',cat:'חלקי מנה',type:'חלקי מנה',I:k('ירקנית'),J:k('פחמימה'),K:k('סלט'),tot:0,kg,notes:note,calc:'ק"ג/14 (פק"א 0 = המשך)',n:up(kg/14)})}
   }
+  // גחנון (yarin 2026-10-28): her jachnun label (same size as the main label): packs, cartons = packs/3, drinks = packs*10; 2 per PO for shipping
+  const jc=sheet('גחנון');
+  for(const e of jc?jc.entries:[]){
+    if(!keys.has(e.p.dateKey))continue;
+    const n=qsum(jc.def.take(e.p.items)||[]);if(!n)continue;
+    jobs.push({...base(e.p),fmt:'jach',cat:'גחנון',type:'ג\'חנון מצונן',I:n,J:up(n/3),K:n*10,tot:n*10,notes:e.p.notes||'',calc:'2 לשילוח',n:2,
+      rowLabels:['כמות מארזים:','כמות קרטונים:','כמות שתיה:']});
+  }
+  // line (קו) from the delivery routes of that day, printed at the top of the labels
+  const rl=new Map();
+  for(const j of jobs){if(!rl.has(j.dateKey))rl.set(j.dateKey,routeLinesMap(j.dateKey));const m=rl.get(j.dateKey);if(m&&m.has(j.po)){j.line=m.get(j.po).line;j.driver=m.get(j.po).driver}}
   const t=j=>(j.hh??99)*60+(j.mm??0);
   jobs.forEach((j,i)=>j.seq=i);
   return jobs.sort((a,b)=>(a.dateKey<b.dateKey?-1:a.dateKey>b.dateKey?1:0)||LBL_CATS.indexOf(a.cat)-LBL_CATS.indexOf(b.cat)||t(a)-t(b)||String(a.address).localeCompare(String(b.address),'he')||a.po.localeCompare(b.po)||a.seq-b.seq);
@@ -1765,7 +1815,7 @@ function labelJobs(days){
 // Excel allows about 1000 manual page breaks per sheet, so a long day continues on the next sheet
 const LBL_PER_SHEET=1000;
 function labelSheetXml(labels){
-  const X=[],A=[];
+  const X=[],A=[],M=[];
   labels.forEach((j,b)=>{
     const o=b*19, R=n=>n+o;
     const row=(n,cells,ht)=>X.push(`<row r="${R(n)}"${ht?` ht="${ht}" customHeight="1"`:''}>${cells.join('')}</row>`);
@@ -1774,7 +1824,10 @@ function labelSheetXml(labels){
     const po=j.labelPo||j.po;L(4,'מס פק"א:',/^\d+$/.test(po)?Number(po):po,20);
     row(5,[cellXml('A'+R(5),'',21),cellXml('B'+R(5),'',21)]);
     L(6,'שם לקוח:',j.contact,22);L(7,'מס טלפון:',j.phone,23);L(8,'כתובת:',j.address,22,78.75);L(9,'סוג מנה:',j.type,22);
-    L(10,'בשרי:',j.I,22);L(11,'טיבעוני:',j.J,22);L(12,'אלרגניים:',j.K,22);L(13,'סה"כ מנות:',j.tot,22);
+    // line (קו) from the delivery routes, at the top like in yarin's holiday label format
+    if(j.line){row(2,[cellXml('A'+R(2),j.line,21),cellXml('B'+R(2),j.driver?'נהג: '+j.driver:'',21)]);if(!j.driver)M.push(`A${R(2)}:B${R(2)}`)}
+    const RL=j.rowLabels||['בשרי:','טיבעוני:','אלרגניים:'];
+    L(10,RL[0],j.I,22);L(11,RL[1],j.J,22);L(12,RL[2],j.K,22);L(13,'סה"כ מנות:',j.tot,22);
     L(14,'תאריך:',j.date?excelDate(j.date):'',24);L(15,'שעת אספקה:',j.hh!=null?(j.hh*60+(j.mm||0))/1440:'',25);L(16,'הערות:',j.notes,28,27);
     row(17,[cellXml('A'+R(17),'',21),cellXml('B'+R(17),'',30)],27);
     row(18,[cellXml('A'+R(18),'',21),cellXml('B'+R(18),'עופות מהדרין',21)]);
@@ -1787,14 +1840,14 @@ function labelSheetXml(labels){
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:B${last}"/>
 <sheetViews><sheetView rightToLeft="1" view="pageBreakPreview" zoomScale="60" zoomScaleNormal="100" workbookViewId="0"/></sheetViews>
 <sheetFormatPr defaultColWidth="28.625" defaultRowHeight="26.25"/><cols><col min="1" max="16384" width="28.625" style="18"/></cols>
-<sheetData>${X.join('')}</sheetData>
+<sheetData>${X.join('')}</sheetData>${M.length?`<mergeCells count="${M.length}">${M.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}
 <printOptions horizontalCentered="1"/><pageMargins left="0.2" right="0.2" top="0.74803149606299213" bottom="0.74803149606299213" header="0.31496062992125984" footer="0.31496062992125984"/><pageSetup paperSize="256" scale="54" orientation="portrait" verticalDpi="200" r:id="rId1"/>${brk.length?`<rowBreaks count="${brk.length}" manualBreakCount="${brk.length}">${brk.join('')}</rowBreaks>`:''}<colBreaks count="1" manualBreakCount="1"><brk id="2" max="1048575" man="1"/></colBreaks><drawing r:id="rId2"/></worksheet>`;
   const drawing=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${A.join('')}</xdr:wsDr>`;
   return {sheet,drawing};
 }
-function buildLabelsXlsx(jobs){
-  jobs=jobs.filter(j=>!j.fmt); // תפזורת labels have their own formats and are printed directly
+function buildLabelsXlsx(jobs,keepFmt){
+  if(!keepFmt)jobs=jobs.filter(j=>!j.fmt); // תפזורת labels have their own formats and are printed directly
   const all=jobs.flatMap(j=>Array.from({length:j.n},()=>j)), parts=[];
   for(let i=0;i<all.length;i+=LBL_PER_SHEET)parts.push(all.slice(i,i+LBL_PER_SHEET));
   const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)), printer=b64(LABEL_TPL.printer);
@@ -1868,8 +1921,9 @@ function renderLabels(){
   const box=$('lbl-box');if(!box)return;
   const on=!!(result&&result.hasMulti);
   box.hidden=!on;$('taf-box').hidden=!on;
-  const all=on?labelJobs(lblDays()):[], jobs=all.filter(j=>!j.fmt), taf=all.filter(j=>j.fmt==='taf');
-  const pr=renderLabelRows($('lbl-body'),jobs,'אין בימים שנבחרו חמגשיות, כריכי שניצל או חלקי מנה',false);
+  const all=on?labelJobs(lblDays()):[], jobs=all.filter(j=>!j.fmt), taf=all.filter(j=>j.fmt==='taf'), jach=all.filter(j=>j.fmt==='jach');
+  $('btn-jach').disabled=!jach.length;$('btn-jach').textContent='מדבקות גחנון (2 מכל פק"א'+(jach.length?' · '+jach.length+' פק"אות':'')+')';
+  const pr=renderLabelRows($('lbl-body'),jobs,'אין בימים שנבחרו חמגשיות, כריכי שניצל, חלקי מנה, חמין או אירועים',false);
   const pt=renderLabelRows($('taf-body'),taf,'אין בימים שנבחרו הזמנות תפזורת',true);
   const tot=jobs.reduce((a,j)=>a+j.n,0), per=c=>jobs.filter(j=>j.cat===c).reduce((a,j)=>a+j.n,0);
   $('lbl-count').textContent=jobs.length?tot+' מדבקות · '+LBL_CATS.filter(c=>c!=='תפזורת').map(c=>c+' '+per(c)).join(' · ')+' · הודפסו '+pr+' מתוך '+jobs.length+' שורות':'';
@@ -1890,12 +1944,12 @@ $('lbl-search').addEventListener('input',()=>lblFilter('lbl'));$('taf-search').a
    same cell styles and printer settings, one label per page, values instead of her formulas ---- */
 function tafValues(j,ship){
   const t=j.tot, k=j.k, dt=j.date?excelDate(j.date):'', tm=j.hh!=null?(j.hh*60+(j.mm||0))/1440:'';
-  if(ship)return {A5:'מדבקה לשילוח - 2',A6:j.line||0,A7:'מספר פק"א:',B7:/^\d+$/.test(j.po)?Number(j.po):j.po,
+  if(ship)return {A5:'מדבקה לשילוח - 2',A6:j.line?j.line+(j.driver?' · נהג: '+j.driver:''):0,A7:'מספר פק"א:',B7:/^\d+$/.test(j.po)?Number(j.po):j.po,
     A9:'שם הלקוח:',B9:j.contact,A10:'פלאפון לקוח:',B10:j.phone,A11:'כתובת:',B11:j.address,A12:'סוג מנה: ',B12:j.type,A13:'סה"כ מנות:',B13:t,
     A14:'רטבים אישים:',B14:t,A15:'לחם פרוס (כיכרות):',B15:t/10,A16:'סירופ ממותק (2 ליטר)',B16:t/50,A17:'עוגות/עוגיות/חטיף:',B17:t/2,A18:'פרי העונה:',B18:t/2,
     A19:'סכו"ם ארוז:',B19:t,A20:'צלחות:',B20:t,A21:'כוסות:',B21:t,A22:'מפות חד"פ:',B22:t/33,A23:'שקית אשפה:',B23:t/33,A24:'כפות הגשה:',B24:t/16,
     A25:'צליאק:',B25:j.K,A26:'תאריך:',B26:dt,A27:'שעת אספקה:',B27:tm,A29:'הערות לשילוח:',B29:j.notes};
-  return {A1:'  ',A4:j.line||0,A5:'מספר פק"א:',D5:/^\d+$/.test(j.po)?Number(j.po):j.po,A7:'שם הלקוח:',D7:j.contact,A8:'פלאפון לקוח:',D8:j.phone,
+  return {A1:'  ',A4:j.line?j.line+(j.driver?' · נהג: '+j.driver:''):0,A5:'מספר פק"א:',D5:/^\d+$/.test(j.po)?Number(j.po):j.po,A7:'שם הלקוח:',D7:j.contact,A8:'פלאפון לקוח:',D8:j.phone,
     A9:'כתובת:',D9:j.address,A10:'סוג מנה: ',D10:j.type,A11:'סה"כ מנות:',D11:t,E11:"גסט'",
     A12:'עיקרית רגילה:',B12:22,C12:j.I/22,D12:j.I,E12:k.g.I,A13:'טבעוני:',B13:22,C13:j.J/22,D13:j.J,E13:k.g.J,A14:'צליאק:',C14:k.cel,D14:j.K,
     A15:'פחמימה (ק"ג):',B15:4.5,C15:k.carb/4.5,D15:k.carb,E15:k.g.carb,A16:'ירקנית (ק"ג):',B16:6,C16:k.veg/6,D16:k.veg,E16:k.g.veg,
@@ -2002,6 +2056,7 @@ $('btn-taf-print').addEventListener('click',()=>printLabels(lblTaf(),lblDayName(
 // report labels (yarin): 3 of each, kitchen format for תפזורת, not marked as printed
 $('btn-taf-rep').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:3})),lblDayName('מדבקות דיווח תפזורת'),false,true));
 $('btn-rep').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:3}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות דיווח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
+$('btn-jach').addEventListener('click',()=>{const days=lblDays(),jobs=labelJobs(days).filter(j=>j.fmt==='jach');if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות גחנון'),blob:new Blob([buildLabelsXlsx(jobs,true)],{type:XMIME})}])});
 $('btn-taf-ship').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:2})),lblDayName('מדבקות שילוח תפזורת'),true));
 // shipping labels (yarin): 2 copies of every label row, kg rows with PO 0 included, in a separate file
 $('btn-ship').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:2}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות לשילוח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
@@ -2028,6 +2083,325 @@ const HINTS={report:'איש קשר, טלפון, כתובת לאספקה ותאר
   inp.addEventListener('change',async()=>{for(const f of [...inp.files])await handle(f)});
   ['dragenter','dragover'].forEach(e=>slot.addEventListener(e,()=>slot.classList.add('drag')));
   ['dragleave','drop'].forEach(e=>slot.addEventListener(e,()=>slot.classList.remove('drag')));
+});
+/* ===== קווי חלוקה (yarin, 2026-10-28): every Friday the day's POs are arranged in delivery lines by area, quantities and
+   delivery time; the driver is set later. Line names and the areas that travel together come from her files 4.9-16.10 ===== */
+const LINE_COLORS=[['כחול','5B9BD5'],['תכלת','BDD7EE'],['צהוב','FFFF00'],['צהוב בהיר','FFF2CC'],['אדום','FF7C80'],['ורוד','FFCCFF'],['כתום','FFC000'],
+  ['כתמתם','F8CBAD'],['סגול','B4A7D6'],['סגלגל','E4DFEC'],['ירוק כהה','70AD47'],['ירוק בהיר','C6E0B4'],['אפור','BFBFBF'],['טורקיז','66FFFF'],['ירקרק','E2EFDA']];
+const MAX_LINES=20;
+const lineName=n=>n?'קו '+n+(LINE_COLORS[n-1]?' '+LINE_COLORS[n-1][0]:''):'לא משובץ';
+const lineColor=n=>n&&LINE_COLORS[n-1]?LINE_COLORS[n-1][1]:'FFFFFF';
+// areas in the order the lines are numbered; the first area whose words appear in the address wins
+const HB=s=>new RegExp('(?<![א-ת])(?:'+s+')(?![א-ת])');
+const REGIONS=[
+  {id:'yiftach',name:'עוטף צפון: יפתח, ברך, ק.2, ארז, חץ שחור, נחל עוז',re:HB('יפתח|זיקים|ברך|ק\\.?\\s?2|משא ארז|מתק ארז|חץ שחור|נחל עוז|כרמיה|נתיב העשרה|יד מרדכי')},
+  {id:'magen',name:'עוטף דרום: מגן, מופ, מארס, אמיתי, עלומים, פגה, דימה',re:HB('מגן|מופ|מארס|אמיתי|מיוערת|עלומים|פגה|משמר הנגב|עמיעוז|דימה ?2?|כיסופים|נירים|רעים|בארי|כפר עזה|סעד|ניר עוז|עין השלושה|אורים')},
+  {id:'south',name:'דרום: צאלים, באפ דרום, צליל, שדה תימן, נחל רביב',re:HB('צאלים|באפ דרום|צליל|שדה תימן|נחל רביב|רביב|מפגש|שומריה|להב|באר שבע|נבטים|חצרים|שבטה|ניצנה')},
+  {id:'ashdod',name:'אשדוד ורחובות',re:HB('אשדוד|ניר גלים|רחובות|גבירול|יבנה|גן יבנה|חצור|נס ציונה')},
+  // yarin 2026-10-28: אורות רבין, בית ליד and בית יצחק are always a line of their own, apart from רעננה (one driver can't do both by 10:00)
+  {id:'hadera',name:'חדרה ונתניה: אורות רבין, בית ליד, בית יצחק',re:HB('אורות רבין|בית ליד|בית יצחק|נתניה|בחן|עמק חפר|כפר יונה|חדרה')},
+  {id:'sharon',name:'רעננה וסירקין',re:HB('חטמ"?ר אפר?יים?|קדומים|רעננה|השיזף|סירקין|סיריקן|כפר סבא|הרצליה|פתח תקו?וה|הוד השרון')},
+  {id:'deadsea',name:'ים המלח ובקעה: מצוקי דרגות, עשת, בקעות',re:HB('מצוקי דרגות|ים המלח|בקעת הירדן|ייטב|עשת|בקעות|מעלה אדומים|יריחו|ורד יריחו|מול נבו|מעלה אפר?יים|מחנה גלעד')},
+  {id:'tlv',name:'תל אביב: קריה, פאר, גבעת שמואל, תל השומר',re:HB('קריה|הקריה|תל אביב|ת"א|פאר דרך השלום|חיל הים|גבעת שמואל|תל השומר|רמת גן|בני ברק|גלילות|צריפין|מתקן אדם|לוד')},
+  // yarin 2026-10-28: מודיעין is always a separate line
+  {id:'modiin',name:'מודיעין',re:HB('מודיעין|גבעת הנשיקות|מכבים|רעות|שילת')},
+  {id:'shomron',name:'צפון השומרון: מבוא דותן, חריש, אבני חפץ, ג\'למה',re:HB('מבוא דותן|ריחן|חריש|מי עמי|אבני חפץ|ג\'?למה|גן נר|מלכישוע|עפולה|ברקאי|חומש|שבי שומרון|סאלם|שקד|חנניה')},
+  {id:'holon',name:'חולון ופלמחים: מקווה ישראל, פלמחים',re:HB('מקווה ישראל|חולון|בת ים|פלמחים|ראשון לציון|ראשל"צ')},
+  {id:'shfela',name:'שפלה: טל שחר, חפץ חיים, שדות מיכה',re:HB('טל שחר|שדות מיכה|חפץ חיים|חרובית|נחשון|תל נוף|גדרה|צרעה')},
+  {id:'binyamin',name:'בנימין: עופר, בית אל, קדומים, אריאל',re:HB('עופר|בית אל|בנימין|אריאל|עין שמר|גבעת זאב|עטרות')},
+  {id:'etzion',name:'גוש עציון ובית שמש: עציון, צור הדסה, שדמה, בית שמש',re:HB('בית שמש|עציון|צור הדסה|שדמה|הרודיון|אפרת|אלון שבות')},
+  {id:'jlm',name:'ירושלים: נפתוח, גן סאקר, הר איתן',re:HB('ירושלי?ים|נפתוח|גן סאקר|הר איתן|גבעת התחמושת|מחנה יהודה|קרניבד|שנלר|רמות')},
+];
+const regionById=id=>REGIONS.find(r=>r.id===id);
+// spelling variants of the same place (yarin 2026-10-28: "כפר סיריקן" is כפר סירקין)
+const PLACE_ALIAS=[[/סיריקן/g,'סירקין'],[/ירושליים/g,'ירושלים'],[/נזמיץ|ניזמית/g,'נזמית']];
+const locKey=a=>norm(PLACE_ALIAS.reduce((t,[re,to])=>t.replace(re,to),clean(a)).replace(/[-–\s]*(?:קר\s*)?(?:מצונ|מצנו)\S*/g,' ').replace(/^(?:רחוב|רח')\s+/,''));
+const routeLoad=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
+const routeSave=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let routeDay=null;
+function regionOf(address){
+  const learned=routeLoad('routeLearn')[locKey(address)];
+  if(learned&&regionById(learned))return learned;
+  const a=clean(address).replace(/[״”“]/g,'"');
+  const r=REGIONS.find(x=>x.re.test(a));
+  return r?r.id:null;
+}
+
+/* the route rows of a PO that is not in the trays sheet, from its items (same words as in yarin's files) */
+function otherRouteRows(p){
+  const its=p.items||[], used=new Set(), out=[];
+  const take=f=>{const l=its.filter(i=>!used.has(i)&&f(i.desc));l.forEach(i=>used.add(i));return l};
+  const cel=()=>take(d=>RX.celiac.test(d)||/אלרג/.test(d));
+  const jach=take(d=>RX.jachnun.test(d));
+  if(jach.length){const n=qsum(jach);out.push({h:'ג\'חנון מצונן',I:n,J:up(n/3),K:n*10,jach:true})}
+  const ham=take(d=>RX.hamin.test(d));
+  if(ham.length){
+    const c=ham.filter(i=>RX.celiac.test(i.desc)||/אלרג/.test(i.desc)),v=ham.filter(i=>!c.includes(i)&&RX.vegan.test(i.desc)),r=ham.filter(i=>!c.includes(i)&&!v.includes(i));
+    out.push({h:'חמין מצונן',I:qsum(r),J:qsum(v),K:qsum(c)});
+  }
+  const sw=SHEETS.find(s=>s.name==='כריכים עזה'), swIts=sw.take(its.filter(i=>!used.has(i)));
+  if(swIts){
+    swIts.forEach(i=>used.add(i));
+    sw.rows(p,swIts).forEach(row=>{const v=k=>row[k]?row[k].v:'';out.push({h:v(7)||'חלה שניצל',I:+v(8)||0,J:+v(9)||0,K:+v(10)||0,P:String(v(14)||'').split(' | ').filter(x=>/אלרג/.test(x)).join(', ')})});
+  }
+  const parts=take(d=>RX.parts.test(d)&&!RX.hamin.test(d));
+  if(parts.length){
+    const side=/ירקנית|פחמימה|סלט/, q=re=>qsum(parts.filter(i=>re.test(i.desc)&&!side.test(i.desc)));
+    const meat=q(/מנה\s*בשרית/)+qsum(take(d=>/תוספת מנה עיקרית/.test(d))), veg=q(/מנה\s*(?:טבעוני|צמחוני)/), fish=q(/מנה\s*דג|מנת\s*דג/), c=qsum(cel());
+    const w=(n,t)=>n?n+' '+t:'', kg=(re,f,t)=>{const n=qsum(parts.filter(i=>re.test(i.desc)));return n?kgTxt(n*f)+' ק"ג '+t:''};
+    const note=p.cold?'מצונן':'חם';
+    out.push({h:'חלקי מנה',I:w(meat,'בשר'),J:w(veg,'טיבעוני'),K:[w(fish,'דג'),w(c,'אלרגניים')].filter(Boolean).join(' '),P:note,text:true,n:meat+veg+fish+c});
+    const k=[kg(/ירקנית/,0.09,'ירקנית'),kg(/פחמימה/,0.18,'פחמימה'),kg(/סלט/,0.18,'סלט')];
+    if(k.some(Boolean))out.push({h:'חלקי מנה',I:k[0],J:k[1],K:k[2],P:note,text:true,n:0});
+  }
+  const selfRun=take(d=>RX.event.test(d)&&RX.selfRun.test(d));
+  if(selfRun.length){
+    const add=qsum(take(d=>RX.addon.test(d)&&!RX.stand.test(d))), n=qsum(selfRun)+add, v=Math.min(p.addrVegan||0,n);
+    out.push({h:'אירוע ללא הפעלה'+(p.cold?'- קר מצונן':''),I:n-v,J:v,K:qsum(cel())});
+  }
+  const ops=take(d=>RX.event.test(d)||RX.stand.test(d));
+  // events with stands / operation (אירוע עם הפעלה) don't go out on the delivery lines (yarin 2026-10-28)
+  if(ops.length){cel();take(d=>RX.addon.test(d))}
+  const bf=take(d=>RX.breakfast.test(d)||/בורקס/.test(d));
+  if(bf.length)out.push({h:'מארז בורקס',I:qsum(bf.filter(i=>!RX.vegan.test(i.desc))),J:qsum(bf.filter(i=>RX.vegan.test(i.desc))),K:0});
+  const c=qsum(cel());
+  const rest=its.filter(i=>!used.has(i)&&!RX.kitchen.test(i.desc));
+  rest.forEach(i=>{used.add(i);out.push({h:i.desc||'(ללא תיאור)',I:i.qty,J:0,K:0,review:true})});
+  if(c){const first=out.find(r=>!r.text&&!r.jach);if(first)first.K=(first.K||0)+c;else out.push({h:'חמגשית לל"ג',I:0,J:0,K:c})}
+  // trays in a PO filed under another category (e.g. sandwiches + trays)
+  const tr=its.filter(i=>!used.has(i)&&RX.kitchen.test(i.desc));
+  if(tr.length)out.push({h:tr.map(i=>i.desc).join(' + '),I:qsum(tr.filter(i=>!RX.vegan.test(i.desc))),J:qsum(tr.filter(i=>RX.vegan.test(i.desc))),K:0,review:true});
+  return out;
+}
+const rowPortions=r=>r.jach?(r.I||0)*10:r.text?(r.n||0):(+r.I||0)+(+r.J||0)+(+r.K||0);
+
+/* the POs of one delivery day grouped by place (same address = one stop), each with its area */
+function routeStops(key){
+  const d=result&&result.dates.find(x=>x.key===key);if(!d)return [];
+  const byPo=new Map();
+  const P=r=>{if(!byPo.has(r.po))byPo.set(r.po,{po:r.po,contact:r.contact,phone:r.phone,extraName:r.extraName,extraPhone:r.extraPhone,address:r.address,date:r.date,hh:r.hh,mm:r.mm,ampm:r.ampm||(r.hh==null?'':r.hh>=16?'ערב':'בוקר'),notes:r.notes||'',rows:[]});return byPo.get(r.po)};
+  for(const r of d.rows)P(r).rows.push({h:r.h,I:r.I,J:r.J,K:r.K,P:r.P||'',review:r.flag==='review'});
+  const sp=new Map(sumRes?sumRes.pos.map(p=>[p.po,p]):[]);
+  for(const o of d.others){const p=sp.get(o.po)||{...o,items:o.items},rows=otherRouteRows(p);if(rows.length)P(o).rows.push(...rows)}
+  const locs=new Map();
+  for(const s of byPo.values()){
+    const k=locKey(s.address)||s.po;
+    if(!locs.has(k))locs.set(k,{key:k,address:s.address,region:regionOf(s.address),pos:[]});
+    locs.get(k).pos.push(s);
+  }
+  const t=s=>(s.hh??99)*60+(s.mm??0);
+  for(const l of locs.values()){
+    {const ok=l.pos.find(x=>!PLACE_ALIAS.some(([re])=>{re.lastIndex=0;return re.test(x.address)}));if(ok)l.address=ok.address}
+    l.pos.sort((a,b)=>t(a)-t(b)||a.po.localeCompare(b.po));
+    l.time=Math.min(...l.pos.map(t));
+    l.portions=l.pos.reduce((a,s)=>a+s.rows.reduce((b,r)=>b+rowPortions(r),0),0);
+  }
+  return [...locs.values()];
+}
+// one line per area, numbered in the order of REGIONS; places she moved by hand keep her line
+function routePlan(key){
+  const locs=routeStops(key), st=(routeLoad('routes')[key])||{}, assign=st.assign||{};
+  const present=REGIONS.filter(r=>locs.some(l=>l.region===r.id&&assign[l.key]==null));
+  const taken=new Set(Object.values(assign).filter(Boolean));
+  const auto=new Map();let n=1;
+  for(const r of present){while(taken.has(n))n++;auto.set(r.id,n++)}
+  for(const l of locs){l.line=assign[l.key]!=null?assign[l.key]:(l.region?auto.get(l.region):0);l.manual=assign[l.key]!=null}
+  const lines=new Map();
+  for(const l of locs){if(!lines.has(l.line))lines.set(l.line,{n:l.line,locs:[]});lines.get(l.line).locs.push(l)}
+  const list=[...lines.values()].sort((a,b)=>(a.n||99)-(b.n||99));
+  for(const L of list){
+    L.locs.sort((a,b)=>a.time-b.time||String(a.address).localeCompare(String(b.address),'he'));
+    L.portions=L.locs.reduce((a,l)=>a+l.portions,0);
+    L.pos=L.locs.reduce((a,l)=>a+l.pos.length,0);
+    const ts=L.locs.flatMap(l=>l.pos).filter(s=>s.hh!=null).map(s=>s.hh*60+(s.mm||0));
+    L.from=ts.length?Math.min(...ts):null;L.to=ts.length?Math.max(...ts):null;
+    L.regions=[...new Set(L.locs.map(l=>l.region).filter(Boolean))];
+    L.driver=(st.drivers||{})[L.n]||'';
+  }
+  return {key,locs,lines:list,state:st};
+}
+// line name per PO for the labels, once she has worked on (or downloaded) the routes of that day
+function routeLinesMap(key){
+  // Fridays only (yarin 2026-10-28): the line goes above the PO on every label and copy of that day
+  const d=result&&result.dates.find(x=>x.key===key);
+  if(!(d&&d.date&&d.date.getDay()===5))return null;
+  const plan=routePlan(key), m=new Map();
+  for(const L of plan.lines)if(L.n)for(const l of L.locs)for(const s of l.pos)m.set(s.po,{line:lineName(L.n),driver:L.driver});
+  return m;
+}
+function routeUpdate(key,f){const all=routeLoad('routes'),st=all[key]||{};f(st);st.used=true;all[key]=st;routeSave('routes',all)}
+const minTxt=m=>m==null?'':String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+
+function renderRoutes(){
+  const box=$('route-box');if(!box)return;
+  const on=!!(result&&result.hasMulti&&result.dates.length);
+  box.hidden=!on;if(!on)return;
+  const sel=$('route-day');
+  if(!result.dates.some(d=>d.key===routeDay))routeDay=(result.dates.find(d=>d.date&&d.date.getDay()===5)||result.dates[0]).key;
+  sel.innerHTML='';
+  for(const d of result.dates){const o=document.createElement('option');o.value=d.key;o.textContent=d.name+' · '+d.pos.length+' פק"א';o.selected=d.key===routeDay;sel.appendChild(o)}
+  const plan=routePlan(routeDay);
+  const cards=$('route-lines');cards.innerHTML='';
+  for(const L of plan.lines){
+    const c=document.createElement('div');c.className='rl'+(L.n?'':' none');
+    const i=document.createElement('i');i.style.background='#'+lineColor(L.n);
+    const t=document.createElement('div');const b=document.createElement('b');b.textContent=lineName(L.n);
+    const sp=document.createElement('span');sp.textContent=L.locs.length+' מקומות · '+L.pos+' פק"א · '+L.portions+' מנות'+(L.from!=null?' · '+minTxt(L.from)+(L.to!==L.from?'–'+minTxt(L.to):''):'');
+    t.append(b,sp);
+    if(L.n){
+      const inp=document.createElement('input');inp.placeholder='נהג';inp.value=L.driver;inp.setAttribute('aria-label','נהג ל'+lineName(L.n));
+      inp.addEventListener('change',()=>routeUpdate(routeDay,st=>{st.drivers=st.drivers||{};st.drivers[L.n]=inp.value.trim()}));
+      t.appendChild(inp);
+      // all the labels of this line's POs, with the line and the driver at the top (yarin 2026-10-28)
+      const pb=document.createElement('button');pb.className='ghost small';pb.type='button';pb.textContent='מדבקות הקו';
+      pb.addEventListener('click',()=>{
+        routeUpdate(routeDay,st=>{st.drivers=st.drivers||{};st.drivers[L.n]=inp.value.trim()});
+        const pos=new Set(L.locs.flatMap(l=>l.pos.map(s=>s.po))), d=result.dates.find(x=>x.key===routeDay);
+        const jobs=labelJobs([d]).filter(j=>pos.has(j.po)), main=jobs.filter(j=>!j.fmt||j.fmt==='jach'), taf=jobs.filter(j=>j.fmt==='taf');
+        const tag=lineName(L.n)+' '+(d.date?d.date.getDate()+'.'+(d.date.getMonth()+1):''), files=[];
+        if(main.length)files.push({name:'מדבקות '+tag+'.xlsx',blob:new Blob([buildLabelsXlsx(main,true)],{type:XMIME})});
+        if(taf.length)files.push({name:'מדבקות מטבח תפזורת '+tag+'.xlsx',blob:new Blob([buildTafXlsx(taf,false)],{type:XMIME})});
+        if(files.length)saveFiles(files);else setStatus('אין בקו הזה מדבקות להדפסה');
+        renderLabels();
+      });
+      t.appendChild(pb);
+    }else{const w=document.createElement('span');w.className='warn';w.textContent='מקומות שלא זיהיתי להם אזור. בחרי להם קו בטבלה, ואזכור אותם לפעם הבאה.';t.appendChild(w)}
+    c.append(i,t);cards.appendChild(c);
+  }
+  const tb=$('route-body');tb.innerHTML='';
+  const maxN=Math.min(MAX_LINES,Math.max(LINE_COLORS.length,...plan.lines.map(L=>L.n+1)));
+  for(const L of plan.lines)for(const l of L.locs){
+    const tr=document.createElement('tr');if(!l.line)tr.className='unk';
+    const td=document.createElement('td');const s=document.createElement('select');s.setAttribute('aria-label','קו עבור '+l.address);
+    for(let n=0;n<=maxN;n++){const o=document.createElement('option');o.value=n;o.textContent=lineName(n);o.selected=n===l.line;s.appendChild(o)}
+    s.style.borderInlineStartColor='#'+lineColor(l.line);
+    s.addEventListener('change',()=>{
+      const n=+s.value;
+      routeUpdate(routeDay,st=>{st.assign=st.assign||{};
+        // keep the other places where they are now, so moving one place never renumbers the rest
+        for(const x of plan.locs)if(st.assign[x.key]==null)st.assign[x.key]=x.line;
+        st.assign[l.key]=n});
+      if(n&&!l.region){
+        const rs=plan.locs.filter(x=>x.line===n&&x.region).map(x=>x.region);
+        const top=rs.sort((a,b)=>rs.filter(x=>x===b).length-rs.filter(x=>x===a).length)[0];
+        if(top){const m=routeLoad('routeLearn');m[l.key]=top;routeSave('routeLearn',m)}
+      }
+      renderRoutes();renderLabels();
+    });
+    td.appendChild(s);tr.appendChild(td);
+    cell(tr,l.address,'rwrap');
+    const rg=regionById(l.region);cell(tr,rg?rg.name.split(':')[0]:'לא זוהה',rg?'':'unk');
+    cell(tr,l.pos.map(x=>x.po).join(', '));
+    cell(tr,l.pos.flatMap(x=>x.rows.map(r=>r.h+(r.jach?' '+r.I+' מארזים':r.text?'':' '+rowPortions(r)))).join(' · '),'rwrap');
+    cell(tr,l.portions,'n');
+    cell(tr,[...new Set(l.pos.map(x=>x.hh==null?'':minTxt(x.hh*60+(x.mm||0))))].join(', '),'n');
+    tb.appendChild(tr);
+  }
+  const unk=plan.locs.filter(l=>!l.line).length;
+  $('route-count').textContent=plan.lines.filter(L=>L.n).length+' קווים · '+plan.locs.length+' מקומות'+(unk?' · '+unk+' לא משובצים':'');
+}
+
+/* routes file: yarin's columns A-Q, the line in B (in its color), the driver in R merged over the line */
+function routeStylesXml(){
+  const fills=LINE_COLORS.map(([,c])=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`).join('');
+  const bd='<left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/>';
+  const lineXf=LINE_COLORS.map((_,i)=>`<xf numFmtId="0" fontId="2" fillId="${5+i}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="2"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="hh:mm"/></numFmts>
+<fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
+<fills count="${5+LINE_COLORS.length}"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF4472C4"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/><bgColor indexed="64"/></patternFill></fill>${fills}</fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>${bd}</border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="${10+LINE_COLORS.length}">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+${lineXf}
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+}
+const RS={hd:1,tx:2,dt:3,tm:4,num:5,yellow:6,drv:7,wrap:8,none:9,line:n=>n&&n<=LINE_COLORS.length?10+n-1:9};
+const ROUTE_HEAD=['מספר פק"א','קו','שם הלקוח','טלפון','איש קשר נוסף','טלפון 2','כתובת ','סוג מנה ','מנות רגילות','טיבעוני','צליאק','סה"כ כמות מנות','תאריך','שעה ','בוקר / ערב','הערות','קיבולת','נהג'];
+function routeSheetXml(plan){
+  const X=[`<row r="1" ht="30" customHeight="1">${ROUTE_HEAD.map((h,i)=>cellXml(colL(i)+'1',h,RS.hd)).join('')}</row>`], M=[];
+  let r=1;
+  for(const L of plan.lines){
+    const first=r+1;
+    for(const l of L.locs)for(const s of l.pos){
+      const p0=r+1;
+      s.rows.forEach((x,k)=>{
+        r++;const st=x.review?RS.yellow:RS.tx, num=v=>typeof v==='number'?v:(v===''||v==null?'':v), n=x.text?RS.wrap:RS.num;
+        const notes=[x.P,k?'':s.notes].filter(Boolean).join(' | ');
+        const c=[cellXml('A'+r,k?'':(/^\d+$/.test(s.po)?Number(s.po):s.po),RS.tx),cellXml('B'+r,lineName(L.n),RS.line(L.n)),cellXml('C'+r,s.contact,st),cellXml('D'+r,s.phone,st),
+          cellXml('E'+r,s.extraName,st),cellXml('F'+r,s.extraPhone,st),cellXml('G'+r,s.address,st),cellXml('H'+r,x.h,st),
+          cellXml('I'+r,num(x.I),n),
+          x.jach?cellXml('J'+r,x.J,RS.num,`ROUNDUP(I${r}/3,0)`):cellXml('J'+r,num(x.J),n),
+          x.jach?cellXml('K'+r,x.K,RS.num,`I${r}*10`):cellXml('K'+r,num(x.K),n),
+          x.jach||x.text?cellXml('L'+r,'',RS.num):cellXml('L'+r,(+x.I||0)+(+x.J||0)+(+x.K||0),RS.num,`I${r}+J${r}+K${r}`),
+          cellXml('M'+r,s.date?excelDate(s.date):'',RS.dt),cellXml('N'+r,s.hh!=null?(s.hh*60+(s.mm||0))/1440:'',RS.tm),cellXml('O'+r,s.ampm,RS.tx),
+          cellXml('P'+r,notes,RS.wrap),cellXml('Q'+r,1,RS.num),cellXml('R'+r,r===first?(L.driver||''):'',RS.drv)];
+        X.push(`<row r="${r}">${c.join('')}</row>`);
+      });
+      if(r>p0)M.push(`A${p0}:A${r}`);
+    }
+    if(r>first)M.push(`R${first}:R${r}`);
+  }
+  const W=[12,15,11,13,11,13,30,22,10,8,8,10,11,7,8,22,7,12];
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${X.join('')}</sheetData><autoFilter ref="A1:R${Math.max(1,r)}"/>${M.length?`<mergeCells count="${M.length}">${M.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}
+<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/></worksheet>`;
+}
+function routeSummaryXml(plan){
+  const H=['קו','נהג','מקומות','פק"אות','מנות','שעה ראשונה','שעה אחרונה','אזורים'];
+  const X=[`<row r="1" ht="30" customHeight="1">${H.map((h,i)=>cellXml(colL(i)+'1',h,RS.hd)).join('')}</row>`];let r=1;
+  for(const L of plan.lines){r++;X.push(`<row r="${r}">${[cellXml('A'+r,lineName(L.n),RS.line(L.n)),cellXml('B'+r,L.driver,RS.tx),cellXml('C'+r,L.locs.length,RS.num),cellXml('D'+r,L.pos,RS.num),
+    cellXml('E'+r,L.portions,RS.num),cellXml('F'+r,L.from!=null?L.from/1440:'',RS.tm),cellXml('G'+r,L.to!=null?L.to/1440:'',RS.tm),cellXml('H'+r,L.regions.map(id=>regionById(id).name.split(':')[0]).join(', '),RS.wrap)].join('')}</row>`)}
+  const W=[16,14,9,9,9,11,11,40];
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews>
+<cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${X.join('')}</sheetData></worksheet>`;
+}
+function buildRoutesXlsx(plan){
+  const d=result.dates.find(x=>x.key===plan.key);
+  const sheets=[{name:safeName(d?d.name:'קווים',new Set()),xml:routeSheetXml(plan)},{name:'סיכום קווים',xml:routeSummaryXml(plan)}];
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${xesc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets>
+<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${xesc(sheets[0].name)}'!$A$1:$R$${1+plan.locs.reduce((a,l)=>a+l.pos.reduce((b,s)=>b+s.rows.length,0),0)}</definedName></definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const root=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  return zipStore([['[Content_Types].xml',ct],['_rels/.rels',root],['xl/workbook.xml',wb],['xl/_rels/workbook.xml.rels',rels],['xl/styles.xml',routeStylesXml()],...sheets.map((s,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',s.xml])]);
+}
+$('route-day').addEventListener('change',e=>{routeDay=e.target.value;renderRoutes()});
+$('btn-route').addEventListener('click',()=>{
+  if(!routeDay)return;
+  routeUpdate(routeDay,()=>{});
+  const plan=routePlan(routeDay), d=result.dates.find(x=>x.key===routeDay);
+  const f=d&&d.date?d.date.getDate()+'.'+(d.date.getMonth()+1)+'.'+d.date.getFullYear():routeDay;
+  saveFiles([{name:'קווי חלוקה '+f+'.xlsx',blob:new Blob([buildRoutesXlsx(plan)],{type:XMIME})}]);
+  renderLabels();
+});
+$('btn-route-reset').addEventListener('click',()=>{
+  if(!routeDay)return;
+  const all=routeLoad('routes'),st=all[routeDay];if(st){delete st.assign;all[routeDay]=st;routeSave('routes',all)}
+  renderRoutes();renderLabels();
 });
 </script>
 </body></html>
