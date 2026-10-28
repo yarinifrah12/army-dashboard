@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-15</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-16</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -238,7 +238,8 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
       <div class="tablebox" style="max-height:45vh"><table class="wa"><thead><tr><th>הודפס</th><th>פק"א</th><th>תאריך</th><th>סוג מנה</th><th>מנות</th><th>קרטונים חמים</th><th>קרטון סלטים</th><th>מדבקות מטבח</th><th>הדפסה של השורה בלבד</th></tr></thead><tbody id="taf-body"></tbody></table></div>
     <div id="route-box" hidden style="display:flex;flex-direction:column;gap:10px">
       <div class="wa-head"><h2 class="sec">קווי חלוקה</h2><span class="status" id="route-count"></span></div>
-      <div class="bar"><span class="route-pick"><label for="route-day">יום אספקה</label><select id="route-day"></select></span><button class="primary" id="btn-route">הורדת קובץ קווי חלוקה</button><button class="ghost" id="btn-route-reset">חלוקה מחדש לפי אזורים</button><button class="primary" id="btn-route-kitchen">כל המדבקות לפי סוג מנה</button></div>
+      <div class="bar"><span class="route-pick"><label for="route-day">יום אספקה</label><select id="route-day"></select></span><button class="primary" id="btn-route">הורדת קובץ קווי חלוקה</button><button class="ghost" id="btn-route-reset">חלוקה מחדש לפי אזורים</button></div>
+      <div class="route-pick" id="route-kitchen"></div>
       <small class="status">כל אזור הוא קו, לפי הקווים שלך מ-4.9 עד 16.10. אפשר להעביר מקום לקו אחר בטבלה ולכתוב נהג לכל קו. השינויים נשמרים בדפדפן הזה, ובימי שישי מספר הקו מודפס מעל מספר הפק"א בכל המדבקות והעותקים.</small>
       <div class="sheets" id="route-lines"></div>
       <div class="tablebox" style="max-height:60vh"><table class="wa"><thead><tr><th>קו</th><th>מקום</th><th>אזור</th><th>פק"אות</th><th>מה יוצא</th><th>מנות</th><th>שעה</th></tr></thead><tbody id="route-body"></tbody></table></div>
@@ -2297,6 +2298,7 @@ function renderRoutes(){
     cell(tr,[...new Set(l.pos.map(x=>x.hh==null?'':minTxt(x.hh*60+(x.mm||0))))].join(', '),'n');
     tb.appendChild(tr);
   }
+  renderRouteKitchen();
   const unk=plan.locs.filter(l=>!l.line).length;
   $('route-count').textContent=plan.lines.filter(L=>L.n).length+' קווים · '+plan.locs.length+' מקומות'+(unk?' · '+unk+' לא משובצים':'');
 }
@@ -2398,19 +2400,24 @@ $('btn-route').addEventListener('click',()=>{
   saveFiles([{name:'קווי חלוקה '+f+'.xlsx',blob:new Blob([buildRoutesXlsx(plan)],{type:XMIME})}]);
   renderLabels();
 });
-// all labels of the day grouped by meal type, each type by delivery time, so the kitchen can split them (yarin 2026-10-28)
-const KITCHEN_ORDER=['גחנון','חמין','כריך שניצל','חמגשיות','חלקי מנה','אירוע'];
-$('btn-route-kitchen').addEventListener('click',()=>{
+// one button per meal type: all of that type's labels of the day in delivery-time order, so the kitchen can split them (yarin 2026-10-28)
+const KITCHEN_ORDER=['גחנון','חמין','כריך שניצל','חמגשיות','חלקי מנה','אירוע','תפזורת'];
+const KITCHEN_NAME={'כריך שניצל':'כריכים','אירוע':'אירועים'};
+function renderRouteKitchen(){
+  const box=$('route-kitchen');if(!box)return;box.innerHTML='';
   const d=result&&result.dates.find(x=>x.key===routeDay);if(!d)return;
-  const t=j=>(j.hh??99)*60+(j.mm??0), all=labelJobs([d]);
-  const ord=c=>{const i=KITCHEN_ORDER.indexOf(c);return i<0?99:i};
-  const sort=l=>l.map((j,i)=>({j,i})).sort((a,b)=>ord(a.j.cat)-ord(b.j.cat)||String(a.j.type).localeCompare(String(b.j.type),'he')||t(a.j)-t(b.j)||String(a.j.address).localeCompare(String(b.j.address),'he')||a.j.po.localeCompare(b.j.po)||a.i-b.i).map(x=>x.j);
-  const main=sort(all.filter(j=>!j.fmt||j.fmt==='jach')), taf=sort(all.filter(j=>j.fmt==='taf'));
-  const tag=d.date?d.date.getDate()+'.'+(d.date.getMonth()+1):'', files=[];
-  if(main.length)files.push({name:'מדבקות לפי סוג מנה '+tag+'.xlsx',blob:new Blob([buildLabelsXlsx(main,true)],{type:XMIME})});
-  if(taf.length)files.push({name:'מדבקות מטבח תפזורת לפי שעה '+tag+'.xlsx',blob:new Blob([buildTafXlsx(taf,false)],{type:XMIME})});
-  if(files.length)saveFiles(files);
-});
+  const all=labelJobs([d]), t=j=>(j.hh??99)*60+(j.mm??0), tag=d.date?d.date.getDate()+'.'+(d.date.getMonth()+1):'';
+  const lab=document.createElement('label');lab.textContent='מדבקות לפי סוג מנה:';box.appendChild(lab);
+  for(const cat of KITCHEN_ORDER){
+    const jobs=all.filter(j=>j.cat===cat).map((j,i)=>({j,i})).sort((a,b)=>String(a.j.type).localeCompare(String(b.j.type),'he')||t(a.j)-t(b.j)||String(a.j.address).localeCompare(String(b.j.address),'he')||a.j.po.localeCompare(b.j.po)||a.i-b.i).map(x=>x.j);
+    if(!jobs.length)continue;
+    const n=jobs.reduce((a,j)=>a+j.n,0), name=KITCHEN_NAME[cat]||cat;
+    const b=document.createElement('button');b.type='button';b.className='primary';b.textContent=name+' · '+n;
+    b.title=n+' מדבקות, לפי סוג מנה ושעת אספקה';
+    b.addEventListener('click',()=>saveFiles([{name:'מדבקות '+name+' '+tag+'.xlsx',blob:new Blob([cat==='תפזורת'?buildTafXlsx(jobs,false):buildLabelsXlsx(jobs,true)],{type:XMIME})}]));
+    box.appendChild(b);
+  }
+}
 $('btn-route-reset').addEventListener('click',()=>{
   if(!routeDay)return;
   const all=routeLoad('routes'),st=all[routeDay];if(st){delete st.assign;all[routeDay]=st;routeSave('routes',all)}
