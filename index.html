@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 29.10-1</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 29.10-2</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -1768,6 +1768,7 @@ function labelJobs(days){
         notes:String(v(14)||'').split(' | ').filter(x=>/אלרג/.test(x)).join(', '),calc:'מנות/30, מינימום 3',n:Math.max(3,up(tot/30))});
     }
   }
+  // extra: only in the delivery-lines buttons (per line / per meal type), not in the main labels box (yarin 2026-10-29)
   // yarin 2026-10-28: חמין מצונן = portions/50, at least 2; אירוע (ללא הפעלה) = portions/10, at least 5. Same numbers as the delivery lines
   for(const [sn,cat,f,min,calc] of [['חמין','חמין',r=>/^חמין/.test(r.h),2,'מנות/50, מינימום 2'],['אירועים ללא הפעלה','אירוע',r=>/^אירוע ללא הפעלה/.test(r.h),5,'מנות/10, מינימום 5']]){
     const sh=sheet(sn);
@@ -1775,7 +1776,7 @@ function labelJobs(days){
       if(!keys.has(e.p.dateKey))continue;
       for(const r of otherRouteRows(e.p).filter(f)){
         const I=+r.I||0,J=+r.J||0,K=+r.K||0,tot=I+J+K;if(!tot)continue;
-        jobs.push({...base(e.p),cat,type:r.h,I,J,K,tot,notes:e.p.notes||'',calc,n:Math.max(min,up(tot/(cat==='חמין'?50:10)))});
+        jobs.push({...base(e.p),extra:true,cat,type:r.h,I,J,K,tot,notes:e.p.notes||'',calc,n:Math.max(min,up(tot/(cat==='חמין'?50:10)))});
       }
     }
   }
@@ -1785,7 +1786,7 @@ function labelJobs(days){
     if(!keys.has(e.p.dateKey))continue;
     for(const r of otherRouteRows(e.p).filter(r=>r.h==='מארז בורקס')){
       const I=+r.I||0,J=+r.J||0,K=+r.K||0,tot=I+J+K;if(!tot)continue;
-      jobs.push({...base(e.p),cat:'בורקס',type:r.h,I,J,K,tot,notes:e.p.notes||'',calc:'מנות/10',n:up(tot/10)});
+      jobs.push({...base(e.p),extra:true,cat:'בורקס',type:r.h,I,J,K,tot,notes:e.p.notes||'',calc:'מנות/10',n:up(tot/10)});
     }
   }
   const pt=sheet('חלקי מנה'), side=/ירקנית|פחמימה|סלט/;
@@ -1898,7 +1899,7 @@ function printLabels(jobs,name,ship,noMark){
 const lblDayName=pre=>{const d=lblDays();return d.length?labelsName(d).replace(/^מדבקות/,pre):pre+'.xlsx'};
 // all label rows of the ticked days; תפזורת has its own box (yarin), so each box takes its part
 const lblDays=()=>result?result.dates.filter(d=>included.has(d.key)):[];
-const lblMain=()=>labelJobs(lblDays()).filter(j=>!j.fmt), lblTaf=()=>labelJobs(lblDays()).filter(j=>j.fmt==='taf');
+const lblMain=()=>labelJobs(lblDays()).filter(j=>!j.fmt&&!j.extra), lblTaf=()=>labelJobs(lblDays()).filter(j=>j.fmt==='taf');
 function renderLabelRows(tb,jobs,empty,taf){
   tb.innerHTML='';
   const done=lblLoad();
@@ -1931,12 +1932,12 @@ function renderLabels(){
   const box=$('lbl-box');if(!box)return;
   const on=!!(result&&result.hasMulti);
   box.hidden=!on;$('taf-box').hidden=!on;
-  const all=on?labelJobs(lblDays()):[], jobs=all.filter(j=>!j.fmt), taf=all.filter(j=>j.fmt==='taf'), jach=all.filter(j=>j.fmt==='jach');
+  const all=on?labelJobs(lblDays()):[], jobs=all.filter(j=>!j.fmt&&!j.extra), taf=all.filter(j=>j.fmt==='taf'), jach=all.filter(j=>j.fmt==='jach');
   $('btn-jach').disabled=!jach.length;$('btn-jach').textContent='מדבקות גחנון (2 מכל פק"א'+(jach.length?' · '+jach.length+' פק"אות':'')+')';
   const pr=renderLabelRows($('lbl-body'),jobs,'אין בימים שנבחרו חמגשיות, כריכי שניצל, חלקי מנה, חמין או אירועים',false);
   const pt=renderLabelRows($('taf-body'),taf,'אין בימים שנבחרו הזמנות תפזורת',true);
   const tot=jobs.reduce((a,j)=>a+j.n,0), per=c=>jobs.filter(j=>j.cat===c).reduce((a,j)=>a+j.n,0);
-  $('lbl-count').textContent=jobs.length?tot+' מדבקות · '+LBL_CATS.filter(c=>c!=='תפזורת').map(c=>c+' '+per(c)).join(' · ')+' · הודפסו '+pr+' מתוך '+jobs.length+' שורות':'';
+  $('lbl-count').textContent=jobs.length?tot+' מדבקות · '+LBL_CATS.filter(c=>c!=='תפזורת'&&per(c)).map(c=>c+' '+per(c)).join(' · ')+' · הודפסו '+pr+' מתוך '+jobs.length+' שורות':'';
   $('taf-count').textContent=taf.length?taf.length+' פק"אות · '+taf.reduce((a,j)=>a+j.n,0)+' מדבקות מטבח · '+taf.length*2+' מדבקות שילוח · הודפסו '+pt+' מתוך '+taf.length:'';
   $('btn-lbl').disabled=$('btn-ship').disabled=$('btn-rep').disabled=!jobs.length;
   $('btn-taf-print').disabled=$('btn-taf-ship').disabled=$('btn-taf-rep').disabled=!taf.length;
@@ -2024,7 +2025,7 @@ function summaryName(){
 // build the requested files up front, so every download starts inside the same click
 function makeFiles(kitchenToo,summaryToo,labelsToo){
   const out=[];
-  if(labelsToo){const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).filter(j=>!j.fmt);if(jobs.length){out.push({name:labelsName(days),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})});setTimeout(()=>markPrinted(jobs))}}
+  if(labelsToo){const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).filter(j=>!j.fmt&&!j.extra);if(jobs.length){out.push({name:labelsName(days),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})});setTimeout(()=>markPrinted(jobs))}}
   if(kitchenToo){const days=result.dates.filter(d=>included.has(d.key));if(days.length)out.push({name:fileName(days),blob:new Blob([buildXlsx(days,true)],{type:XMIME})})}
   if(summaryToo&&sumRes){
     try{localStorage.setItem('summaryLink',$('link').value.trim())}catch(e){}
@@ -2065,11 +2066,11 @@ $('btn-lbl').addEventListener('click',()=>download(false,false,true));
 $('btn-taf-print').addEventListener('click',()=>printLabels(lblTaf(),lblDayName('מדבקות מטבח תפזורת')));
 // report labels (yarin): 3 of each, kitchen format for תפזורת, not marked as printed
 $('btn-taf-rep').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:3})),lblDayName('מדבקות דיווח תפזורת'),false,true));
-$('btn-rep').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:3}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות דיווח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
+$('btn-rep').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).filter(j=>!j.extra).map(j=>({...j,n:3}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות דיווח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
 $('btn-jach').addEventListener('click',()=>{const days=lblDays(),jobs=labelJobs(days).filter(j=>j.fmt==='jach');if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות גחנון'),blob:new Blob([buildLabelsXlsx(jobs,true)],{type:XMIME})}])});
 $('btn-taf-ship').addEventListener('click',()=>printLabels(lblTaf().map(j=>({...j,n:2})),lblDayName('מדבקות שילוח תפזורת'),true));
 // shipping labels (yarin): 2 copies of every label row, kg rows with PO 0 included, in a separate file
-$('btn-ship').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).map(j=>({...j,n:2}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות לשילוח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
+$('btn-ship').addEventListener('click',()=>{const days=result.dates.filter(d=>included.has(d.key)),jobs=labelJobs(days).filter(j=>!j.extra).map(j=>({...j,n:2}));if(jobs.length)saveFiles([{name:labelsName(days).replace(/^מדבקות/,'מדבקות לשילוח'),blob:new Blob([buildLabelsXlsx(jobs)],{type:XMIME})}])});
 // a link saved before the site moved to lee-bar.co.il is updated to the new address
 try{$('link').value=(localStorage.getItem('summaryLink')||'').replace('catering.li-bar.co.il','catering.lee-bar.co.il')}catch(e){}
 $('link').addEventListener('input',()=>{try{localStorage.setItem('summaryLink',$('link').value.trim())}catch(e){}});
