@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 28.10-19</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 29.10-1</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -260,7 +260,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
     <li><b>טבלת סיכום · כריכים עזה:</b> בשרי במנות רגילות, טבעוני בטבעוני, חמגשיות לל"ג באותה פק"א בצליאק. כשבכתובת כתוב סוג וכמות ("50 חלה שניצל", "50 פרנה פרגית") נפתחת שורה לכל סוג.</li>
     <li><b>טבלת סיכום · חלקי מנה:</b> פק"א שיש בה ארוחה מוכנה בתפזורת לא נכנסת לגיליון, היא בקובץ החמגשיות והתפזורת. המנה העיקרית במנות, וירקנית, פחמימה וסלט בק"ג (0.09, 0.18 ו-0.18 ק"ג למנה). ארוזית בוקר, סביח, מרק, גחנון וחמין נכנסים לגיליונות שלהם לפי שם הפריט. חלקי ארוחה חמין (בשרי או טבעוני) נכנסים לגיליון חמין. חמין לל"ג או אלרגני נספר בעמודת צליאק, וסה"כ הוא חמין + טבעוני + צליאק.</li>
     <li><b>מדבקות תפזורת:</b> מדבקת מטבח: גסטרונומים לפי עיקרית/22, טבעוני/22, פחמימה (ק"ג)/4.5, ירקנית/6, סלטים/3 (ק"ג למנה 0.18, 0.09, 0.2, בלי הצליאק). קרטונים חמים = (עיקרית + טבעוני + פחמימה + ירקנית)/3, ועוד 1 אם יש צליאק, ומספר המדבקות = הקרטונים החמים. קרטון סלטים = סלטים/6. מדבקת שילוח: 2 לכל פק"א, עם רטבים, לחם (/10), סירופ (/50), עוגות ופרי (/2), סכו"ם, צלחות וכוסות (1 למנה), מפות ושקיות (/33) וכפות הגשה (/16). תמיד מעגלים כלפי מעלה, חוץ מהמספרים במדבקת השילוח שמעוגלים כמו באקסל.</li>
-    <li><b>מדבקות חמין ואירועים:</b> חמין: מדבקה לכל 50 מנות, מינימום 2. אירוע ללא הפעלה: מדבקה לכל 10 מנות, מינימום 5. גחנון: 2 מדבקות לכל פק"א.</li>
+    <li><b>מדבקות חמין ואירועים:</b> בורקס (ארוזית בוקר): מדבקה לכל 10 מנות. חמין: מדבקה לכל 50 מנות, מינימום 2. אירוע ללא הפעלה: מדבקה לכל 10 מנות, מינימום 5. גחנון: 2 מדבקות לכל פק"א.</li>
     <li><b>מדבקות:</b> קובץ "מדבקות לשילוח" נפרד: 2 עותקים מכל שורה בטבלת המדבקות, כולל שורות ההמשך עם 0 בפק"א. חמגשיות וכריכי שניצל: מדבקה לכל 30 מנות, מינימום 3. חלקי מנה: קודם מדבקות המנות (בשרי + טבעוני + אלרגניים, חלקי 75), ואחריהן מדבקות הק"ג (ירקנית, פחמימה, סלט, חלקי 14) עם 0 בפק"א, שמסמן המשך של הפק"א שלפניה. תמיד מעגלים כלפי מעלה. כל המדבקות של פק"א יוצאות ברצף, ורק אז הפק"א הבאה.</li>
     <li>לכל תאריך אספקה נוצר גיליון משלו, ואחריו גיליון "נוספות" של אותו תאריך. נכנסים כל התאריכים שמופיעים בשני הקבצים. אפשר להעלות גם רק MultiReportView, כי יש בו את פרטי הפק"א.</li>
     <li>נכנסות כל הפק"אות חוץ מפק"אות בסטטוס "לא פעיל" או "בוטלה" בדיביסי. בפק"א חדשה כתוב בהערות "פק"א חדשה (טרם אושרה)". כשיש לפק"א גם מקורית וגם עדכון, נלקח העדכון.</li>
@@ -1735,7 +1735,7 @@ $('wa-search').addEventListener('input',waFilter);
 /* ---- labels (מדבקות) for the Godex label printer: yarin's label sheet ("פורמט מדבקה"), one label per page, all labels of a PO in a row ---- */
 // how many labels (yarin): trays and schnitzel sandwiches = portions/30, at least 3; חלקי מנה = portions/75 plus kg/14; always rounded up
 const up=x=>Math.ceil(x-1e-9);
-const LBL_CATS=['חמגשיות','תפזורת','כריך שניצל','חלקי מנה','חמין','אירוע'];
+const LBL_CATS=['חמגשיות','תפזורת','כריך שניצל','חלקי מנה','חמין','אירוע','בורקס'];
 // kitchen calculation of the תפזורת label (yarin's formulas): gastronorms per item, then hot cartons and salad cartons
 function tafCalc(I,J,K){
   const net=I+J+K-K, carb=net*0.18, veg=net*0.09, sal=net*0.2;
@@ -1777,6 +1777,15 @@ function labelJobs(days){
         const I=+r.I||0,J=+r.J||0,K=+r.K||0,tot=I+J+K;if(!tot)continue;
         jobs.push({...base(e.p),cat,type:r.h,I,J,K,tot,notes:e.p.notes||'',calc,n:Math.max(min,up(tot/(cat==='חמין'?50:10)))});
       }
+    }
+  }
+  // בורקס (ארוזית בוקר, yarin 2026-10-29): portions/10, rounded up
+  const bk=sheet('ארוזית בוקר');
+  for(const e of bk?bk.entries:[]){
+    if(!keys.has(e.p.dateKey))continue;
+    for(const r of otherRouteRows(e.p).filter(r=>r.h==='מארז בורקס')){
+      const I=+r.I||0,J=+r.J||0,K=+r.K||0,tot=I+J+K;if(!tot)continue;
+      jobs.push({...base(e.p),cat:'בורקס',type:r.h,I,J,K,tot,notes:e.p.notes||'',calc:'מנות/10',n:up(tot/10)});
     }
   }
   const pt=sheet('חלקי מנה'), side=/ירקנית|פחמימה|סלט/;
@@ -2401,7 +2410,7 @@ $('btn-route').addEventListener('click',()=>{
   renderLabels();
 });
 // one button per meal type: all of that type's labels of the day in delivery-time order, so the kitchen can split them (yarin 2026-10-28)
-const KITCHEN_ORDER=['גחנון','חמין','כריך שניצל','חמגשיות','חלקי מנה','אירוע','תפזורת'];
+const KITCHEN_ORDER=['גחנון','חמין','כריך שניצל','חמגשיות','חלקי מנה','אירוע','בורקס','תפזורת'];
 const KITCHEN_NAME={'כריך שניצל':'כריכים','אירוע':'אירועים'};
 function renderRouteKitchen(){
   const box=$('route-kitchen');if(!box)return;box.innerHTML='';
