@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 29.10-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 3.11-1</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -775,16 +775,23 @@ function mergePos(reportRows,multiItems){
   return {pos,skipped};
 }
 
-/* sandwich types written in the delivery address: "50 חלה שניצל" / "50 פרנה פרגית" → one row each */
-const SW=/חל[הת]|פרנה|כריך|לחמני|באגט|לאפה|פיתה|טורטי|שניצל|פרגית|אסאדו|המבורגר|קציצ|שווארמה|שוורמה/;
+/* sandwich types written in the delivery address: "50 חלה שניצל" / "50 פרנה פרגית" → one row each.
+   Several types on one line ("חוף זיקים 30 אסאדו 50 שניצל") → one row per type (yarin 2026-11-03) */
+const SW=/חל[הת]|פרנה|כריך|לחמני|באגט|לאפה|פיתה|טורטי|שניצל|פרגית|אס[אה]?ד[או]ו?|המבורגר|קציצ|שווארמה|שוורמה/;
+// bare "שניצל" → "חלה שניצל", bare "אסאדו" → "כריך אסאדו" (yarin's summary table, 2026-11-03)
+const swName=n=>{const x=clean(n).replace(/^[-:,\s]+|[-:,\s]+$/g,'').replace(/אס[אה]?ד[או]ו?(?![֐-׿])/g,'אסאדו');
+  return x==='שניצל'?'חלה שניצל':x==='אסאדו'?'כריך אסאדו':x};
 function sandwichTypes(raw){
   const lines=String(raw||'').replace(/\r/g,'').split('\n').map(l=>clean(l).replace(/^["'״\s]+|["'״\s]+$/g,'')).filter(Boolean);
   const split=[], used=[]; let name=null;
   for(const l of lines){
     if(!SW.test(l)||RX.vegan.test(l)||PHONE.test(l))continue;
-    const m=l.match(/^(\d{1,4})\s*[-:]?\s*(.+)$/)||l.match(/^(.+?)\s*[-:]?\s*(\d{1,4})$/);
-    if(m){const q=+(/^\d/.test(m[1])?m[1]:m[2]), n=clean(/^\d/.test(m[1])?m[2]:m[1]);if(SW.test(n)){split.push({q,name:n});used.push(l);continue}}
-    if(!/\d/.test(l)&&!name){name=clean(l.replace(/\s*(?:בבקשה|שיגיע\s*\S*|נא\s.*)[!.\s]*$/,'').replace(/!+$/,''));used.push(l)}
+    // "name qty" when the line ends with a number and starts with a word, else "qty name"
+    const nameFirst=/^\D/.test(l)&&/\d$/.test(l);
+    const rx=nameFirst?/(\D+?)\s*[-:]?\s*(\d{1,4})(?=\s|$)/g:/(?:^|\s)(\d{1,4})\s*[-:]?\s*(\D+?)(?=\s+\d|$)/g;
+    const pairs=[...l.matchAll(rx)].map(m=>({txt:m[0].trim(),q:+(nameFirst?m[2]:m[1]),name:swName(nameFirst?m[1]:m[2])})).filter(x=>x.q&&SW.test(x.name));
+    if(pairs.length){for(const x of pairs){split.push({q:x.q,name:x.name});used.push(x.txt)}continue}
+    if(!/\d/.test(l)&&!name){name=swName(l.replace(/\s*(?:בבקשה|שיגיע\s*\S*|נא\s.*)[!.\s]*$/,'').replace(/!+$/,''));used.push(l)}
   }
   return {split,name,used};
 }
@@ -852,6 +859,8 @@ const SHEETS=[
     const aV=qsum(cel.filter(i=>/טבעונ/.test(i.desc))), aC=qsum(cel.filter(i=>!/טבעונ/.test(i.desc)&&/צמחונ/.test(i.desc)));
     notes=[aV?aV+' אלרגניים טבעוני':'',aC?aC+' אלרגניים צמחוני':'',notes].filter(Boolean).join(' | ');
     let list=T.split.map(x=>({h:x.name,i:x.q}));
+    // the שניצל row comes first and carries the vegan / celiac (yarin 2026-11-03)
+    const sI=list.findIndex(x=>/שניצל/.test(x.h));if(sI>0)list.unshift(...list.splice(sI,1));
     if(list.length){
       const tot=list.reduce((a,x)=>a+x.i,0);
       if(tot===R+V&&V)list[0].i=Math.max(0,list[0].i-V);
