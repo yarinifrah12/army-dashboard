@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 12.11-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 12.11-3</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -537,7 +537,8 @@ function build(reportRows,multiItems,opts={}){
       }
     }
     // תפזורת: vegan count comes from the address and is taken out of the regular portions
-    for(const x of groups.values())if(x.taf&&A.vegan){x.J+=A.vegan;x.I=Math.max(0,x.I-A.vegan)}
+    // vegan celiac portions are already in the celiac column (with "אלרגניים טבעוני" in the notes), so they are not counted again as vegan (yarin 2026-11-12)
+    for(const x of groups.values())if(x.taf&&A.vegan){const v=Math.max(0,A.vegan-x.allergen-x.allergenV);x.J+=v;x.I=Math.max(0,x.I-v)}
     // trays the customer asked to get cold ("מצונן" in the address) get a cold meal type, like תפזורת and events (yarin 2026-10-28)
     const coldH=h=>!A.cold||!/^חמגשית/.test(h)||/מצונ/.test(h)?h:/ללא נלווים/.test(h)?h+'- מצונן קר':h+'- קר מצונן';
     for(const x of groups.values())
