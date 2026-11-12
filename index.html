@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 11.11-2</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 12.11-1</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -2223,19 +2223,19 @@ function routeStops(key){
     l.time=Math.min(...l.pos.map(t));
     l.portions=l.pos.reduce((a,s)=>a+s.rows.reduce((b,r)=>b+rowPortions(r),0),0);
   }
-  // same place, different delivery time = another truck (yarin 2026-11-11): the place is split by time,
-  // the earliest time keeps the place's key, each later time is its own stop and goes on its own line (wave 1, 2...)
+  // breakfast vs lunch = another truck (yarin 2026-11-12): deliveries from 14:00 go on separate lunch lines (קו צהריים),
+  // so a place with both is split; the morning part keeps the place's key
   const out=[];
   for(const l of locs.values()){
     const groups=[];
-    for(const s of l.pos){const g=groups[groups.length-1];if(g&&(s.hh==null||t(s)-g.t<SAME_PLACE_GAP))g.pos.push(s);else groups.push({t:t(s),pos:[s]})}
-    groups.forEach((g,w)=>out.push({...l,key:w?l.key+'@'+minTxt(g.t):l.key,place:l.key,wave:w,pos:g.pos,time:g.t,
+    for(const s of l.pos){const w=s.hh!=null&&t(s)>=LUNCH_FROM?1:0;let g=groups.find(x=>x.w===w);if(!g)groups.push(g={w,t:t(s),pos:[]});g.pos.push(s)}
+    groups.forEach(g=>out.push({...l,key:g.w?l.key+'@צהריים':l.key,place:l.key,wave:g.w,pos:g.pos,time:g.t,
       portions:g.pos.reduce((a,s)=>a+s.rows.reduce((b,r)=>b+rowPortions(r),0),0)}));
   }
   return out;
 }
-// minutes between two deliveries to the same place from which a second truck goes (yarin 2026-11-11: two hours)
-const SAME_PLACE_GAP=120;
+// deliveries from this time (minutes) go on the lunch lines (yarin 2026-11-12: 14:00)
+const LUNCH_FROM=14*60;
 // one line per area, numbered in the order of REGIONS; places she moved by hand keep her line
 function routePlan(key){
   const locs=routeStops(key), st=(routeLoad('routes')[key])||{}, assign=st.assign||{};
@@ -2244,7 +2244,7 @@ function routePlan(key){
   const taken=new Set(Object.values(assign).filter(Boolean));
   const auto=new Map();let n=1;
   for(const r of present){while(taken.has(n))n++;auto.set(r.id+'#0',n++)}
-  // extra trucks for the same place at a later time get their own lines after the area lines (one per area and wave)
+  // lunch lines (from 14:00) come after all the morning area lines, one per area
   for(const r of REGIONS)for(let w=1;locs.some(l=>l.region===r.id&&free(l)&&l.wave===w);w++){while(taken.has(n))n++;auto.set(r.id+'#'+w,n++)}
   for(const l of locs){l.line=!free(l)?assign[l.key]:(l.region?auto.get(l.region+'#'+(l.wave||0)):0);l.manual=!free(l)}
   const lines=new Map();
@@ -2258,6 +2258,7 @@ function routePlan(key){
     L.from=ts.length?Math.min(...ts):null;L.to=ts.length?Math.max(...ts):null;
     L.regions=[...new Set(L.locs.map(l=>l.region).filter(Boolean))];
     L.driver=(st.drivers||{})[L.n]||'';
+    L.lunch=L.locs.length>0&&L.locs.every(l=>l.wave===1);
   }
   return {key,locs,lines:list,state:st};
 }
@@ -2286,7 +2287,7 @@ function renderRoutes(){
   for(const L of plan.lines){
     const c=document.createElement('div');c.className='rl'+(L.n?'':' none');
     const i=document.createElement('i');i.style.background='#'+lineColor(L.n);
-    const t=document.createElement('div');const b=document.createElement('b');b.textContent=lineName(L.n);
+    const t=document.createElement('div');const b=document.createElement('b');b.textContent=lineName(L.n)+(L.lunch&&L.n?' · צהריים':'');
     const sp=document.createElement('span');sp.textContent=L.locs.length+' מקומות · '+L.pos+' פק"א · '+L.portions+' מנות'+(L.from!=null?' · '+minTxt(L.from)+(L.to!==L.from?'–'+minTxt(L.to):''):'');
     t.append(b,sp);
     if(L.n){
