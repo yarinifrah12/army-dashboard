@@ -206,7 +206,7 @@ h2.sec{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:10px
         <span class="status" id="sp-rep-state" role="status"></span>
         <small>מוסיף בסוף כל גיליון רק פק"אות שעוד לא מופיעות בו, בצבע צהוב. העמודות מותאמות לפי הכותרות בקובץ. צריך להיות מחוברים עם Microsoft.</small></div>
       <div id="sum-notes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 12.11-1</small></h2><span class="status" id="wa-count"></span></div>
+      <div class="wa-head"><h2 class="sec">הודעות וואטסאפ · אירועים <small style="font-size:.7rem;color:var(--muted);font-weight:400">גרסה 12.11-2</small></h2><span class="status" id="wa-count"></span></div>
       <div class="wa-find"><label for="wa-search">חיפוש פק"א</label><input id="wa-search" type="search" inputmode="numeric" autocomplete="off" placeholder="מספר פק&quot;א, שם או טלפון"><span class="status" id="wa-found"></span></div>
       <div class="tablebox" style="max-height:55vh"><table class="wa"><thead><tr><th>נשלח</th><th>הלקוח ענה</th><th>פק"א</th><th>תאריך</th><th>סוג אירוע בהודעה</th><th>סועדים</th><th>סטטוס בדיביסי</th><th>כתובת</th><th>איש קשר</th><th>טלפון</th><th></th></tr></thead><tbody id="wa-body"></tbody></table></div>
     </div>
@@ -528,7 +528,7 @@ function build(reportRows,multiItems,opts={}){
       else if(!hasTaf&&PART_MAIN.test(it.desc)){const x=g('תפזורת-ללא נלווים');put(x,{celiac:c.celiac,vegan:/טבעונ|צמחונ/.test(it.desc)},it.qty)}
       else if(!hasTaf&&/חלקי/.test(it.desc)){/* side components (פחמימה, ירקנית, סלטים) are part of the same meal */}
       else if(c.kind==='tray'&&(c.h||mainH)){
-        const h=(c.celiac&&!c.vegan&&mainH)?mainH:(c.h||mainH);
+        const h=(c.celiac&&mainH)?mainH:(c.h||mainH); // celiac (also vegan celiac) joins the main meal row, vegan goes to the notes (yarin 2026-11-12)
         const x=g(h);if(h===tafH&&hasTaf)x.taf=true;put(x,c,it.qty,it.desc);
       }
       else if(c.kind!=='tray'&&c.celiac&&mainH)put(g(mainH),c,it.qty,it.desc);
